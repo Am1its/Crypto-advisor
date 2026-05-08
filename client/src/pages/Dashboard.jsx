@@ -164,10 +164,30 @@ function PricesCard({ prices, votes, onVote }) {
   );
 }
 
-function AIInsightCard({ insight, votes, onVote }) {
+function AIInsightCard({ insight: initialInsight, votes, onVote }) {
+  const [insight, setInsight] = useState(initialInsight);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fading, setFading] = useState(false);
+
+  const handleNext = async () => {
+    setRefreshing(true);
+    try {
+      const { data } = await client.get('/dashboard/insight');
+      setFading(true);
+      setTimeout(() => {
+        setInsight(data.insight);
+        setFading(false);
+      }, 200);
+    } catch {
+      // silently ignore
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <Card accent="bg-violet-500" icon={Sparkles} iconColor="text-violet-400" title="AI Insight of the Day">
-      <div className="relative rounded-xl overflow-hidden flex-1">
+      <div className={`relative rounded-xl overflow-hidden flex-1 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent pointer-events-none" />
         <div className="relative p-4 border border-violet-500/20 rounded-xl">
           <span className="text-violet-400/60 text-5xl font-serif leading-none select-none">"</span>
@@ -175,8 +195,16 @@ function AIInsightCard({ insight, votes, onVote }) {
           <p className="text-violet-400/50 text-xs mt-3 text-right">— AI-generated insight</p>
         </div>
       </div>
-      <div className="pt-1">
+      <div className="pt-1 flex items-center justify-between">
         <VoteButtons section="ai" itemId={insight.id} votes={votes} onVote={onVote} />
+        <button
+          onClick={handleNext}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 text-xs text-violet-400/60 hover:text-violet-400 transition-colors disabled:opacity-40"
+        >
+          <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
+          Next insight
+        </button>
       </div>
     </Card>
   );
