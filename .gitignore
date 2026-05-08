@@ -5,3 +5,4 @@ dist/
 .claude
 CLAUDE.md
 AI_INTERACTIONS.md
+.env.example

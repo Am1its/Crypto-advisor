@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, LogOut, RefreshCw,
-  ThumbsUp, ThumbsDown, Newspaper, Brain, ImageIcon, BarChart2,
+  ThumbsUp, ThumbsDown, Newspaper, Sparkles, ImageIcon,
+  BarChart2, ExternalLink,
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -22,13 +23,23 @@ function fmt(price) {
     : `$${price.toFixed(6)}`;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+function initials(user) {
+  if (user.name) return user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  return user.email?.[0]?.toUpperCase() || '?';
+}
+
+// ── Shared components ──────────────────────────────────────────────────────
 
 function Spinner() {
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
-      <RefreshCw className="text-amber-400 animate-spin" size={36} />
-      <p className="text-gray-400 text-sm">Loading your dashboard…</p>
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-3">
+      <div className="flex gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="w-2 h-2 rounded-full bg-amber-400 animate-bounce"
+            style={{ animationDelay: `${i * 0.15}s` }} />
+        ))}
+      </div>
+      <p className="text-gray-500 text-sm">Loading your dashboard…</p>
     </div>
   );
 }
@@ -36,131 +47,163 @@ function Spinner() {
 function VoteButtons({ section, itemId, votes, onVote }) {
   const key = `${section}:${itemId}`;
   const current = votes[key];
-  const base = 'flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border';
   return (
-    <div className="flex gap-2 mt-3">
+    <div className="flex gap-1.5">
       <button
         onClick={() => onVote(section, itemId, 'up')}
         disabled={!!current}
-        className={`${base} ${
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
           current === 'up'
-            ? 'bg-green-500/20 border-green-500 text-green-400'
-            : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-green-500 hover:text-green-400 disabled:opacity-40 disabled:cursor-not-allowed'
+            ? 'bg-green-500/15 border-green-500/50 text-green-400'
+            : 'border-gray-700 text-gray-500 hover:border-green-500/50 hover:text-green-400 disabled:opacity-30 disabled:cursor-not-allowed'
         }`}
       >
-        <ThumbsUp size={14} />
-        Helpful
+        <ThumbsUp size={10} strokeWidth={2.5} /> Helpful
       </button>
       <button
         onClick={() => onVote(section, itemId, 'down')}
         disabled={!!current}
-        className={`${base} ${
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
           current === 'down'
-            ? 'bg-red-500/20 border-red-500 text-red-400'
-            : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-red-500 hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed'
+            ? 'bg-red-500/15 border-red-500/50 text-red-400'
+            : 'border-gray-700 text-gray-500 hover:border-red-500/50 hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed'
         }`}
       >
-        <ThumbsDown size={14} />
-        Not helpful
+        <ThumbsDown size={10} strokeWidth={2.5} /> Not helpful
       </button>
     </div>
   );
 }
 
-function CardShell({ icon: Icon, title, children }) {
+function Card({ accent, icon: Icon, iconColor, title, children, className = '' }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <Icon className="text-amber-400" size={18} />
-        <h2 className="text-white font-semibold">{title}</h2>
+    <div className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col ${className}`}>
+      <div className={`h-0.5 ${accent}`} />
+      <div className="p-5 flex flex-col gap-4 flex-1">
+        <div className="flex items-center gap-2">
+          <Icon size={15} className={iconColor} />
+          <span className={`text-xs font-semibold uppercase tracking-widest ${iconColor}`}>{title}</span>
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
 
+// ── Section cards ──────────────────────────────────────────────────────────
+
 function PricesCard({ prices, votes, onVote }) {
   return (
-    <CardShell icon={BarChart2} title="Coin Prices">
-      <div className="divide-y divide-gray-800">
-        {prices.map((coin) => (
-          <div key={coin.symbol} className="flex items-center justify-between py-3">
+    <Card accent="bg-amber-400" icon={BarChart2} iconColor="text-amber-400" title="Coin Prices">
+      <div className="flex flex-col">
+        {prices.map((coin, i) => (
+          <div key={coin.symbol}
+            className={`flex items-center justify-between py-3 ${i < prices.length - 1 ? 'border-b border-gray-800/70' : ''}`}>
             <div className="flex items-center gap-3">
-              {coin.image && (
-                <img src={coin.image} alt={coin.symbol} className="w-7 h-7 rounded-full" />
-              )}
+              {coin.image
+                ? <img src={coin.image} alt={coin.symbol} className="w-8 h-8 rounded-full" />
+                : <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">{coin.symbol[0]}</div>
+              }
               <div>
-                <p className="text-white font-medium text-sm">{coin.symbol}</p>
+                <p className="text-white font-semibold text-sm leading-tight">{coin.symbol}</p>
                 <p className="text-gray-500 text-xs">{coin.name}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-white text-sm font-medium">{fmt(coin.price)}</p>
+              <p className="text-white font-bold text-sm">{fmt(coin.price)}</p>
               {coin.change24h != null && (
-                <p className={`text-xs flex items-center justify-end gap-0.5 ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {coin.change24h >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                <span className={`inline-flex items-center gap-0.5 text-xs font-medium mt-0.5 px-1.5 py-0.5 rounded-full ${
+                  coin.change24h >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                }`}>
+                  {coin.change24h >= 0 ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
                   {Math.abs(coin.change24h).toFixed(2)}%
-                </p>
+                </span>
               )}
             </div>
           </div>
         ))}
       </div>
-      <VoteButtons section="prices" itemId="prices-today" votes={votes} onVote={onVote} />
-    </CardShell>
-  );
-}
-
-function NewsCard({ news, votes, onVote }) {
-  return (
-    <CardShell icon={Newspaper} title="Market News">
-      <div className="flex flex-col gap-3">
-        {news.map((article) => (
-          <div key={article.id} className="border border-gray-800 rounded-xl p-3">
-            <a
-              href={article.url !== '#' ? article.url : undefined}
-              target="_blank"
-              rel="noreferrer"
-              className={`text-sm font-medium leading-snug ${article.url !== '#' ? 'text-white hover:text-amber-400 transition-colors' : 'text-white cursor-default'}`}
-            >
-              {article.title}
-            </a>
-            <p className="text-gray-500 text-xs mt-1">
-              {article.source} · {timeAgo(article.publishedAt)}
-            </p>
-            <VoteButtons section="news" itemId={article.id} votes={votes} onVote={onVote} />
-          </div>
-        ))}
+      <div className="mt-auto pt-3 border-t border-gray-800/60">
+        <VoteButtons section="prices" itemId="prices-today" votes={votes} onVote={onVote} />
       </div>
-    </CardShell>
+    </Card>
   );
 }
 
 function AIInsightCard({ insight, votes, onVote }) {
   return (
-    <CardShell icon={Brain} title="AI Insight of the Day">
-      <div className="bg-amber-400/10 border border-amber-400/20 rounded-xl p-4">
-        <p className="text-gray-200 text-sm leading-relaxed">{insight.text}</p>
+    <Card accent="bg-violet-500" icon={Sparkles} iconColor="text-violet-400" title="AI Insight of the Day">
+      <div className="relative rounded-xl overflow-hidden flex-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+        <div className="relative p-4 border border-violet-500/20 rounded-xl">
+          <span className="text-violet-400/60 text-5xl font-serif leading-none select-none">"</span>
+          <p className="text-gray-200 text-sm leading-relaxed -mt-3">{insight.text}</p>
+          <p className="text-violet-400/50 text-xs mt-3 text-right">— AI-generated insight</p>
+        </div>
       </div>
-      <VoteButtons section="ai" itemId={insight.id} votes={votes} onVote={onVote} />
-    </CardShell>
+      <div className="pt-1">
+        <VoteButtons section="ai" itemId={insight.id} votes={votes} onVote={onVote} />
+      </div>
+    </Card>
+  );
+}
+
+function NewsCard({ news, votes, onVote }) {
+  return (
+    <Card accent="bg-sky-400" icon={Newspaper} iconColor="text-sky-400" title="Market News" className="h-full">
+      <div className="flex flex-col gap-0 flex-1">
+        {news.map((article, i) => (
+          <div key={article.id}
+            className={`group py-3.5 ${i < news.length - 1 ? 'border-b border-gray-800/60' : ''}`}>
+            <div className="flex gap-3">
+              <span className="text-gray-700 font-bold text-sm w-4 flex-shrink-0 mt-0.5">{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-200 text-sm font-medium leading-snug hover:text-white transition-colors flex items-start gap-1"
+                >
+                  <span className="line-clamp-2">{article.title}</span>
+                  <ExternalLink size={11} className="flex-shrink-0 mt-0.5 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+                <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-sky-500/10 text-sky-400 text-xs px-2 py-0.5 rounded-full font-medium">{article.source}</span>
+                    <span className="text-gray-600 text-xs">{timeAgo(article.publishedAt)}</span>
+                  </div>
+                  <VoteButtons section="news" itemId={article.id} votes={votes} onVote={onVote} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
 function MemeCard({ meme, votes, onVote }) {
   return (
-    <CardShell icon={ImageIcon} title="Fun Crypto Meme">
-      <div className="rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center min-h-48">
-        <img
-          src={meme.url}
-          alt={meme.caption}
-          className="w-full max-h-72 object-contain"
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
+    <Card accent="bg-rose-400" icon={ImageIcon} iconColor="text-rose-400" title="Fun Crypto Meme">
+      <div className="flex flex-col sm:flex-row gap-5 flex-1">
+        <div className="sm:w-72 flex-shrink-0 rounded-xl overflow-hidden bg-gray-800/60 flex items-center justify-center min-h-44">
+          <img
+            src={meme.url}
+            alt={meme.caption}
+            className="w-full max-h-64 object-contain"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        </div>
+        <div className="flex flex-col justify-between gap-4">
+          <p className="text-gray-300 text-sm leading-relaxed italic">"{meme.caption}"</p>
+          <div>
+            <p className="text-gray-600 text-xs mb-3">Did you find this meme funny?</p>
+            <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
+          </div>
+        </div>
       </div>
-      <p className="text-gray-300 text-sm text-center italic">"{meme.caption}"</p>
-      <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
-    </CardShell>
+    </Card>
   );
 }
 
@@ -174,9 +217,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [votes, setVotes] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
+  const loadDashboard = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     setError('');
     try {
       const { data: res } = await client.get('/dashboard');
@@ -189,6 +234,7 @@ export default function Dashboard() {
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [navigate]);
 
@@ -213,51 +259,72 @@ export default function Dashboard() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="min-h-screen bg-gray-950 px-4 py-6 md:px-8">
+    <div className="min-h-screen bg-gray-950">
       {/* Header */}
-      <header className="max-w-5xl mx-auto flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="text-amber-400" size={24} />
-          <span className="text-white text-xl font-bold">CryptoAdvisor</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm hidden sm:block">
-            Hey, <span className="text-white">{user.name || user.email}</span>
-          </span>
-          <button
-            onClick={loadDashboard}
-            className="text-gray-400 hover:text-amber-400 transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw size={18} />
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-gray-400 hover:text-red-400 text-sm transition-colors"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
+      <header className="border-b border-gray-800/60 bg-gray-900/60 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-amber-400 rounded-lg p-1.5">
+              <TrendingUp size={16} className="text-gray-950" />
+            </div>
+            <span className="text-white font-bold tracking-tight">CryptoAdvisor</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => loadDashboard(true)}
+              disabled={refreshing}
+              className="text-gray-500 hover:text-amber-400 transition-colors disabled:opacity-40"
+              title="Refresh dashboard"
+            >
+              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            </button>
+
+            <div className="flex items-center gap-2.5 pl-3 border-l border-gray-800">
+              <div className="w-7 h-7 rounded-full bg-amber-400/15 border border-amber-400/30 flex items-center justify-center">
+                <span className="text-amber-400 text-xs font-bold">{initials(user)}</span>
+              </div>
+              <span className="text-gray-300 text-sm hidden sm:block">{user.name || user.email}</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-gray-500 hover:text-red-400 text-sm transition-colors pl-3 border-l border-gray-800"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:block">Logout</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Error */}
-      {error && (
-        <div className="max-w-5xl mx-auto mb-6 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
-          {error}
-          <button onClick={loadDashboard} className="underline">Retry</button>
-        </div>
-      )}
+      <main className="max-w-6xl mx-auto px-5 py-7">
+        {/* Error banner */}
+        {error && (
+          <div className="mb-5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
+            {error}
+            <button onClick={() => loadDashboard()} className="underline text-xs">Retry</button>
+          </div>
+        )}
 
-      {/* Dashboard grid */}
-      {data && (
-        <main className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PricesCard prices={data.prices} votes={votes} onVote={handleVote} />
-          <NewsCard news={data.news} votes={votes} onVote={handleVote} />
-          <AIInsightCard insight={data.insight} votes={votes} onVote={handleVote} />
-          <MemeCard meme={data.meme} votes={votes} onVote={handleVote} />
-        </main>
-      )}
+        {data && (
+          <div className="flex flex-col gap-5">
+            {/* Top row: Prices + AI left, News right */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="flex flex-col gap-5">
+                <PricesCard prices={data.prices} votes={votes} onVote={handleVote} />
+                <AIInsightCard insight={data.insight} votes={votes} onVote={handleVote} />
+              </div>
+              <div className="lg:col-span-2">
+                <NewsCard news={data.news} votes={votes} onVote={handleVote} />
+              </div>
+            </div>
+
+            {/* Bottom row: Meme full width */}
+            <MemeCard meme={data.meme} votes={votes} onVote={handleVote} />
+          </div>
+        )}
+      </main>
     </div>
   );
 }
