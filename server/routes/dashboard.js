@@ -64,23 +64,30 @@ function generateMockNews(symbols) {
   ];
 }
 
-async function fetchNews(symbols, apiKey) {
-  if (!apiKey) return generateMockNews(symbols);
+async function fetchNews(symbols) {
   try {
-    const currencies = symbols.join(',');
-    const url = `https://cryptopanic.com/api/v1/posts/?auth_token=${apiKey}&public=true&currencies=${currencies}&kind=news`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`CryptoPanic ${res.status}`);
+    const res = await fetch(
+      'https://www.reddit.com/r/CryptoCurrency/top.json?limit=20&t=day',
+      { headers: { 'User-Agent': 'CryptoAdvisor/1.0' } }
+    );
+    if (!res.ok) throw new Error(`Reddit ${res.status}`);
     const data = await res.json();
-    return (data.results || []).slice(0, 5).map((item) => ({
-      id: item.id.toString(),
-      title: item.title,
-      url: item.url,
-      source: item.source.title,
-      publishedAt: item.published_at,
+
+    const newsPosts = data.data.children
+      .filter((p) => ['GENERAL-NEWS', 'METRICS', 'TECHNOLOGY'].includes(p.data.link_flair_text))
+      .slice(0, 5);
+
+    if (!newsPosts.length) throw new Error('No news posts found');
+
+    return newsPosts.map((p) => ({
+      id: p.data.id,
+      title: p.data.title,
+      url: `https://reddit.com${p.data.permalink}`,
+      source: 'r/CryptoCurrency',
+      publishedAt: new Date(p.data.created_utc * 1000).toISOString(),
     }));
   } catch (err) {
-    console.error('CryptoPanic error:', err.message);
+    console.error('News fetch error:', err.message);
     return generateMockNews(symbols);
   }
 }
@@ -108,7 +115,7 @@ async function fetchAIInsight(investorType, assets, apiKey) {
         'HTTP-Referer': 'https://crypto-advisor.app',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'liquid/lfm-2.5-1.2b-instruct:free',
         messages: [
           {
             role: 'user',
@@ -147,7 +154,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
     const [prices, news, insight, meme] = await Promise.all([
       fetchPrices(assets),
-      fetchNews(assets, process.env.CRYPTOPANIC_API_KEY),
+      fetchNews(assets),
       fetchAIInsight(investor_type, assets, process.env.OPENROUTER_API_KEY),
       fetchMeme(),
     ]);
