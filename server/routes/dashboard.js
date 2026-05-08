@@ -24,7 +24,10 @@ async function fetchPrices(symbols) {
     const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h`;
     console.log('[CoinGecko] Fetching URL:', url);
 
-    const res = await fetch(url);
+    const headers = process.env.COINGECKO_API_KEY
+      ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
+      : {};
+    const res = await fetch(url, { headers });
     console.log('[CoinGecko] Response status:', res.status);
 
     if (!res.ok) {
