@@ -220,19 +220,18 @@ function NewsCard({ news, votes, onVote }) {
 function MemeCard({ meme, votes, onVote }) {
   return (
     <Card accent="bg-rose-400" icon={ImageIcon} iconColor="text-rose-400" title="Fun Crypto Meme">
-      <div className="flex flex-col sm:flex-row gap-5 flex-1">
-        <div className="sm:w-72 flex-shrink-0 rounded-xl overflow-hidden bg-gray-800/60 flex items-center justify-center min-h-44">
+      <div className="flex flex-col gap-4 flex-1">
+        <div className="rounded-xl overflow-hidden bg-gray-800/60 flex items-center justify-center min-h-52">
           <img
             src={meme.url}
             alt={meme.caption}
-            className="w-full max-h-64 object-contain"
+            className="w-full max-h-72 object-contain"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
         </div>
-        <div className="flex flex-col justify-between gap-4">
+        <div className="flex items-end justify-between gap-4 mt-auto">
           <p className="text-gray-300 text-sm leading-relaxed italic">"{meme.caption}"</p>
-          <div>
-            <p className="text-gray-600 text-xs mb-3">Did you find this meme funny?</p>
+          <div className="flex-shrink-0">
             <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
           </div>
         </div>
@@ -343,19 +342,10 @@ export default function Dashboard() {
         )}
 
         {data && (
-          <div className="flex flex-col gap-5">
-            {/* Top row: Prices + AI left, News right */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <div className="flex flex-col gap-5">
-                <PricesCard prices={data.prices} votes={votes} onVote={handleVote} />
-                <AIInsightCard insight={data.insight} votes={votes} onVote={handleVote} />
-              </div>
-              <div className="lg:col-span-2">
-                <NewsCard news={data.news} votes={votes} onVote={handleVote} />
-              </div>
-            </div>
-
-            {/* Bottom row: Meme full width */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <PricesCard prices={data.prices} votes={votes} onVote={handleVote} />
+            <NewsCard news={data.news} votes={votes} onVote={handleVote} />
+            <AIInsightCard insight={data.insight} votes={votes} onVote={handleVote} />
             <MemeCard meme={data.meme} votes={votes} onVote={handleVote} />
           </div>
         )}
