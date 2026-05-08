@@ -12,12 +12,30 @@ const COIN_ID_MAP = {
 
 async function fetchPrices(symbols) {
   try {
-    const ids = symbols.map((s) => COIN_ID_MAP[s]).filter(Boolean);
-    if (!ids.length) return [];
+    const ids = symbols.map((s) => COIN_ID_MAP[s?.toUpperCase()]).filter(Boolean);
+    console.log('[CoinGecko] symbols received:', symbols);
+    console.log('[CoinGecko] mapped IDs:', ids);
+
+    if (!ids.length) {
+      console.warn('[CoinGecko] No valid IDs — check COIN_ID_MAP for:', symbols);
+      return [];
+    }
+
     const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h`;
+    console.log('[CoinGecko] Fetching URL:', url);
+
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
+    console.log('[CoinGecko] Response status:', res.status);
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error('[CoinGecko] Error body:', body.slice(0, 200));
+      throw new Error(`CoinGecko ${res.status}`);
+    }
+
     const data = await res.json();
+    console.log('[CoinGecko] Data received:', JSON.stringify(data));
+
     return data.map((coin) => ({
       symbol: coin.symbol.toUpperCase(),
       name: coin.name,
@@ -26,8 +44,8 @@ async function fetchPrices(symbols) {
       image: coin.image,
     }));
   } catch (err) {
-    console.error('CoinGecko error:', err.message);
-    return symbols.map((s) => ({ symbol: s, name: s, price: null, change24h: null, image: null }));
+    console.error('[CoinGecko] Fetch failed:', err.message);
+    return symbols.map((s) => ({ symbol: s?.toUpperCase() || s, name: s, price: null, change24h: null, image: null }));
   }
 }
 
