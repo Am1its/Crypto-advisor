@@ -65,6 +65,12 @@ export default function Login() {
               />
             </div>
 
+            <div className="flex justify-end -mt-2">
+              <Link to="/forgot-password" className="text-gray-500 text-xs hover:text-amber-400 transition-colors">
+                Forgot password?
+              </Link>
+            </div>
+
             {error && <p className="text-red-400 text-sm">{error}</p>}
 
             <button
