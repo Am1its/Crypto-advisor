@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
 import pool from '../db/index.js';
 import authMiddleware from '../middleware/auth.js';
 
@@ -48,6 +49,33 @@ router.put('/', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Profile PUT error:', err.message);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/password', authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword)
+    return res.status(400).json({ error: 'Both fields are required.' });
+  if (newPassword.length < 6)
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+
+  try {
+    const result = await pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) return res.status(400).json({ error: 'Current password is incorrect.' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, userId]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Password change error:', err.message);
+    res.status(500).json({ error: 'Server error.' });
   }
 });
 

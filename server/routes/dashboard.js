@@ -130,7 +130,7 @@ async function fetchNews(symbols) {
 
     const newsPosts = data.data.children
       .filter((p) => ['GENERAL-NEWS', 'METRICS', 'TECHNOLOGY'].includes(p.data.link_flair_text))
-      .slice(0, 5);
+      .slice(0, 8);
 
     if (!newsPosts.length) throw new Error('No news posts found');
 

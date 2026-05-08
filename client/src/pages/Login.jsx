@@ -28,20 +28,27 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <TrendingUp className="text-amber-400" size={28} />
-          <span className="text-white text-2xl font-bold">CryptoAdvisor</span>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-amber-400/6 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="flex flex-col items-center gap-3 mb-10">
+          <div className="bg-amber-400 rounded-2xl p-3.5 shadow-lg shadow-amber-400/20">
+            <TrendingUp className="text-gray-950" size={30} />
+          </div>
+          <div className="text-center">
+            <p className="text-white text-3xl font-bold tracking-tight">CryptoAdvisor</p>
+            <p className="text-gray-500 text-sm mt-1">Your AI-powered crypto companion</p>
+          </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
-          <h1 className="text-white text-2xl font-semibold mb-1">Welcome back</h1>
-          <p className="text-gray-400 text-sm mb-6">Sign in to your dashboard</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+          <h2 className="text-white text-2xl font-semibold mb-1">Welcome back</h2>
+          <p className="text-gray-400 text-sm mb-7">Sign in to your dashboard</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Email</label>
+              <label className="block text-gray-300 text-sm mb-1.5">Email</label>
               <input
                 name="email"
                 type="email"
@@ -49,11 +56,11 @@ export default function Login() {
                 onChange={handleChange}
                 placeholder="you@example.com"
                 required
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-1">Password</label>
+              <label className="block text-gray-300 text-sm mb-1.5">Password</label>
               <input
                 name="password"
                 type="password"
@@ -61,11 +68,11 @@ export default function Login() {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 transition-colors"
               />
             </div>
 
-            <div className="flex justify-end -mt-2">
+            <div className="flex justify-end">
               <Link to="/forgot-password" className="text-gray-500 text-xs hover:text-amber-400 transition-colors">
                 Forgot password?
               </Link>
@@ -76,7 +83,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-amber-400 hover:bg-amber-300 text-gray-950 font-semibold rounded-lg py-2.5 text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full bg-amber-400 hover:bg-amber-300 text-gray-950 font-semibold rounded-xl py-3 text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 mt-2"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? 'Signing in…' : 'Sign in'}
@@ -85,7 +92,7 @@ export default function Login() {
 
           <p className="text-gray-400 text-sm text-center mt-6">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-amber-400 hover:underline">Sign up</Link>
+            <Link to="/signup" className="text-amber-400 hover:underline font-medium">Sign up</Link>
           </p>
         </div>
       </div>

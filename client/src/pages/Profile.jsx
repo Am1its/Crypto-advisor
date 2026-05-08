@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import client from '../api/client';
 
 const CRYPTO_OPTIONS = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX'];
@@ -58,6 +59,12 @@ export default function Profile() {
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState('');
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword]         = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSaved, setPwSaved]   = useState(false);
+  const [pwError, setPwError]   = useState('');
+
   useEffect(() => {
     client.get('/profile').then(({ data }) => {
       setName(data.user.name || '');
@@ -83,11 +90,33 @@ export default function Profile() {
       const updated = { ...storedUser, name, avatarEmoji };
       localStorage.setItem('user', JSON.stringify(updated));
       setSaved(true);
+      toast.success('Profile saved!');
       setTimeout(() => setSaved(false), 2500);
     } catch {
       setError('Failed to save. Please try again.');
+      toast.error('Failed to save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword) return setPwError('Both fields are required.');
+    if (newPassword.length < 6) return setPwError('New password must be at least 6 characters.');
+    setPwSaving(true); setPwError(''); setPwSaved(false);
+    try {
+      await client.put('/profile/password', { currentPassword, newPassword });
+      setPwSaved(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      toast.success('Password updated!');
+      setTimeout(() => setPwSaved(false), 2500);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to change password.';
+      setPwError(msg);
+      toast.error(msg);
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -188,6 +217,42 @@ export default function Profile() {
                 <p className="text-gray-600 text-xs mt-1">Email cannot be changed</p>
               </div>
             </Section>
+
+            <Section title="Change Password">
+              <div>
+                <label className="block text-gray-400 text-xs mb-1.5">Current password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 text-xs mb-1.5">New password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                />
+              </div>
+              {pwError && <p className="text-red-400 text-xs">{pwError}</p>}
+              <button
+                onClick={handlePasswordChange}
+                disabled={pwSaving}
+                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-400/50 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-60"
+              >
+                {pwSaving
+                  ? <><Loader2 size={14} className="animate-spin" /> Updating…</>
+                  : pwSaved
+                  ? <><CheckCircle size={14} className="text-green-400" /> Password updated!</>
+                  : <><Lock size={14} className="text-amber-400" /> Update password</>
+                }
+              </button>
+            </Section>
           </div>
 
           {/* Right col — Preferences */}
@@ -225,14 +290,6 @@ export default function Profile() {
               </div>
             </Section>
 
-            <div className="flex justify-end">
-              <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-gray-950 font-semibold text-sm px-6 py-2.5 rounded-lg transition-colors disabled:opacity-60">
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
-                  : saved ? <><CheckCircle size={14} /> Saved!</>
-                  : <><Save size={14} /> Save changes</>}
-              </button>
-            </div>
           </div>
         </div>
       </main>
