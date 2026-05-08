@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, LogOut, RefreshCw,
   ThumbsUp, ThumbsDown, Newspaper, Sparkles, ImageIcon,
@@ -262,7 +263,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
       <header className="border-b border-gray-800/60 bg-gray-900/60 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="bg-amber-400 rounded-lg p-1.5">
               <TrendingUp size={16} className="text-gray-950" />
@@ -281,9 +282,10 @@ export default function Dashboard() {
             </button>
 
             <div className="flex items-center gap-2.5 pl-3 border-l border-gray-800">
-              <div className="w-7 h-7 rounded-full bg-amber-400/15 border border-amber-400/30 flex items-center justify-center">
+              <Link to="/profile" title="Edit profile"
+                className="w-7 h-7 rounded-full bg-amber-400/15 border border-amber-400/30 flex items-center justify-center hover:border-amber-400 transition-colors">
                 <span className="text-amber-400 text-xs font-bold">{initials(user)}</span>
-              </div>
+              </Link>
               <span className="text-gray-300 text-sm hidden sm:block">{user.name || user.email}</span>
             </div>
 
@@ -298,7 +300,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-5 py-7">
+      <main className="max-w-[1600px] mx-auto px-5 py-7">
         {/* Error banner */}
         {error && (
           <div className="mb-5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
