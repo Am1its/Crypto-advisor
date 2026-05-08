@@ -242,32 +242,4 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/meme', authMiddleware, async (req, res) => {
-  try {
-    const meme = await fetchMeme();
-    res.json({ meme });
-  } catch (err) {
-    console.error('Meme refresh error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/insight', authMiddleware, async (req, res) => {
-  const userId = req.user.userId;
-  try {
-    const prefResult = await pool.query(
-      'SELECT crypto_assets, investor_type FROM preferences WHERE user_id = $1',
-      [userId]
-    );
-    if (!prefResult.rows.length) return res.status(404).json({ error: 'no_preferences' });
-    const { crypto_assets, investor_type } = prefResult.rows[0];
-    const assets = crypto_assets || ['BTC', 'ETH'];
-    const insight = await fetchAIInsight(investor_type, assets, process.env.OPENROUTER_API_KEY);
-    res.json({ insight: { ...insight, id: `ai-${Date.now()}` } });
-  } catch (err) {
-    console.error('Insight refresh error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 export default router;
