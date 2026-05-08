@@ -10,46 +10,94 @@ const COIN_ID_MAP = {
   XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', AVAX: 'avalanche-2',
 };
 
+const COIN_NAME_MAP = {
+  BTC: 'Bitcoin', ETH: 'Ethereum', SOL: 'Solana', BNB: 'BNB',
+  XRP: 'XRP', ADA: 'Cardano', DOGE: 'Dogecoin', AVAX: 'Avalanche',
+};
+
+const COIN_IMAGES = {
+  bitcoin:      'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
+  ethereum:     'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+  solana:       'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+  binancecoin:  'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
+  ripple:       'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
+  cardano:      'https://assets.coingecko.com/coins/images/975/small/cardano.png',
+  dogecoin:     'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',
+  'avalanche-2':'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+};
+
+let _priceCache = null;
+let _priceCacheKey = '';
+let _priceCachedAt = 0;
+const PRICE_CACHE_TTL = 90_000; // 90 seconds — well under CoinGecko's 1-min window
+
 async function fetchPrices(symbols) {
+  const ids = symbols.map((s) => COIN_ID_MAP[s?.toUpperCase()]).filter(Boolean);
+  if (!ids.length) return [];
+
+  const cacheKey = ids.join(',');
+  if (_priceCache && cacheKey === _priceCacheKey && Date.now() - _priceCachedAt < PRICE_CACHE_TTL) {
+    return _priceCache;
+  }
+
+  // Primary: /coins/markets — returns images + price + 24h change
   try {
-    const ids = symbols.map((s) => COIN_ID_MAP[s?.toUpperCase()]).filter(Boolean);
-    console.log('[CoinGecko] symbols received:', symbols);
-    console.log('[CoinGecko] mapped IDs:', ids);
-
-    if (!ids.length) {
-      console.warn('[CoinGecko] No valid IDs — check COIN_ID_MAP for:', symbols);
-      return [];
-    }
-
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h`;
-    console.log('[CoinGecko] Fetching URL:', url);
-
     const headers = process.env.COINGECKO_API_KEY
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
       : {};
-    const res = await fetch(url, { headers });
-    console.log('[CoinGecko] Response status:', res.status);
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error('[CoinGecko] Error body:', body.slice(0, 200));
-      throw new Error(`CoinGecko ${res.status}`);
-    }
-
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h`,
+      { headers }
+    );
+    if (!res.ok) throw new Error(`CoinGecko markets ${res.status}`);
     const data = await res.json();
-    console.log('[CoinGecko] Data received:', JSON.stringify(data));
-
-    return data.map((coin) => ({
+    const result = data.map((coin) => ({
       symbol: coin.symbol.toUpperCase(),
       name: coin.name,
       price: coin.current_price,
       change24h: coin.price_change_percentage_24h,
-      image: coin.image,
+      image: coin.image || COIN_IMAGES[coin.id] || null,
     }));
+    _priceCache = result;
+    _priceCacheKey = cacheKey;
+    _priceCachedAt = Date.now();
+    return result;
   } catch (err) {
-    console.error('[CoinGecko] Fetch failed:', err.message);
-    return symbols.map((s) => ({ symbol: s?.toUpperCase() || s, name: s, price: null, change24h: null, image: null }));
+    console.error('[CoinGecko] /coins/markets failed:', err.message, '— trying /simple/price');
   }
+
+  // Fallback: /simple/price — more lenient rate limits, no images
+  try {
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`
+    );
+    if (!res.ok) throw new Error(`CoinGecko simple/price ${res.status}`);
+    const data = await res.json();
+    const result = ids.map((id) => {
+      const sym = Object.keys(COIN_ID_MAP).find((k) => COIN_ID_MAP[k] === id) || id.toUpperCase();
+      return {
+        symbol: sym,
+        name: COIN_NAME_MAP[sym] || sym,
+        price: data[id]?.usd ?? null,
+        change24h: data[id]?.usd_24h_change ?? null,
+        image: COIN_IMAGES[id] || null,
+      };
+    }).filter((c) => c.price != null);
+    if (result.length) {
+      _priceCache = result;
+      _priceCacheKey = cacheKey;
+      _priceCachedAt = Date.now();
+      return result;
+    }
+  } catch (err) {
+    console.error('[CoinGecko] /simple/price also failed:', err.message);
+  }
+
+  // Last resort: return nulls but with correct names and hardcoded images
+  return symbols.map((s) => {
+    const sym = s?.toUpperCase() || s;
+    return { symbol: sym, name: COIN_NAME_MAP[sym] || sym, price: null, change24h: null, image: COIN_IMAGES[COIN_ID_MAP[sym]] || null };
+  });
 }
 
 function generateMockNews(symbols) {
