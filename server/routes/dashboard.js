@@ -420,7 +420,7 @@ router.get('/', authMiddleware, async (req, res) => {
       wants('Whale Alerts')    ? generateWhaleAlerts(assets, prices) : null,
     ]);
 
-    res.json({ prices, news, insight, meme, fearGreed, roi, nfts, whales });
+    res.json({ prices, news, insight, meme, fearGreed, roi, nfts, whales, contentTypes: content_types || [] });
   } catch (err) {
     console.error('Dashboard error:', err.message);
     res.status(500).json({ error: 'Server error' });

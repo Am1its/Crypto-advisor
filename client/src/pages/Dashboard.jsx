@@ -571,18 +571,23 @@ export default function Dashboard() {
               <SkeletonCard rows={5} />
               <SkeletonCard rows={4} />
             </>
-          ) : data ? (
-            <>
-              <PricesCard     prices={data.prices}    votes={votes} onVote={handleVote} />
-              <NewsCard       news={data.news}         votes={votes} onVote={handleVote} />
-              <AIInsightCard  insight={data.insight}   votes={votes} onVote={handleVote} />
-              <MemeCard       meme={data.meme}         votes={votes} onVote={handleVote} />
-              {data.fearGreed && <FearGreedCard  fearGreed={data.fearGreed}  votes={votes} onVote={handleVote} />}
-              {data.roi       && <ROICard        roi={data.roi}              votes={votes} onVote={handleVote} />}
-              {data.nfts      && <NFTCard        nfts={data.nfts}            votes={votes} onVote={handleVote} />}
-              {data.whales    && <WhaleAlertCard whales={data.whales}        votes={votes} onVote={handleVote} />}
-            </>
-          ) : null}
+          ) : data ? (() => {
+            // Empty array = no restrictions (legacy users / fresh onboarding)
+            const ct = data.contentTypes || [];
+            const wants = (n) => ct.length === 0 || ct.includes(n);
+            return (
+              <>
+                {wants('Charts')          && data.prices   && <PricesCard    prices={data.prices}    votes={votes} onVote={handleVote} />}
+                {wants('Market News')     && data.news     && <NewsCard      news={data.news}         votes={votes} onVote={handleVote} />}
+                {wants('AI Insights')     && data.insight  && <AIInsightCard insight={data.insight}   votes={votes} onVote={handleVote} />}
+                {wants('Memes')           && data.meme     && <MemeCard      meme={data.meme}         votes={votes} onVote={handleVote} />}
+                {wants('Fear & Greed')    && data.fearGreed && <FearGreedCard  fearGreed={data.fearGreed} votes={votes} onVote={handleVote} />}
+                {wants('ROI Calculator')  && data.roi      && <ROICard        roi={data.roi}              votes={votes} onVote={handleVote} />}
+                {wants('NFT Showcase')    && data.nfts     && <NFTCard        nfts={data.nfts}            votes={votes} onVote={handleVote} />}
+                {wants('Whale Alerts')    && data.whales   && <WhaleAlertCard whales={data.whales}        votes={votes} onVote={handleVote} />}
+              </>
+            );
+          })() : null}
         </div>
       </main>
     </div>
