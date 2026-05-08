@@ -168,9 +168,11 @@ function AIInsightCard({ insight: initialInsight, votes, onVote }) {
   const [insight, setInsight] = useState(initialInsight);
   const [refreshing, setRefreshing] = useState(false);
   const [fading, setFading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const handleNext = async () => {
     setRefreshing(true);
+    setFetchError(false);
     try {
       const { data } = await client.get('/dashboard/insight');
       setFading(true);
@@ -179,11 +181,14 @@ function AIInsightCard({ insight: initialInsight, votes, onVote }) {
         setFading(false);
       }, 200);
     } catch {
-      // silently ignore
+      setFetchError(true);
+      setTimeout(() => setFetchError(false), 3000);
     } finally {
       setRefreshing(false);
     }
   };
+
+  const isOpenRouter = insight.source === 'openrouter';
 
   return (
     <Card accent="bg-violet-500" icon={Sparkles} iconColor="text-violet-400" title="AI Insight of the Day">
@@ -192,7 +197,16 @@ function AIInsightCard({ insight: initialInsight, votes, onVote }) {
         <div className="relative p-4 border border-violet-500/20 rounded-xl">
           <span className="text-violet-400/60 text-5xl font-serif leading-none select-none">"</span>
           <p className="text-gray-200 text-sm leading-relaxed -mt-3">{insight.text}</p>
-          <p className="text-violet-400/50 text-xs mt-3 text-right">— AI-generated insight</p>
+          <div className="flex items-center justify-between mt-3">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              isOpenRouter
+                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                : 'bg-gray-800 text-gray-500 border border-gray-700'
+            }`}>
+              {isOpenRouter ? '⚡ OpenRouter AI' : '📋 Curated tip'}
+            </span>
+            <p className="text-violet-400/50 text-xs">— AI-generated insight</p>
+          </div>
         </div>
       </div>
       <div className="pt-1 flex items-center justify-between">
@@ -200,10 +214,12 @@ function AIInsightCard({ insight: initialInsight, votes, onVote }) {
         <button
           onClick={handleNext}
           disabled={refreshing}
-          className="flex items-center gap-1.5 text-xs text-violet-400/60 hover:text-violet-400 transition-colors disabled:opacity-40"
+          className={`flex items-center gap-1.5 text-xs transition-colors disabled:opacity-40 ${
+            fetchError ? 'text-red-400' : 'text-violet-400/60 hover:text-violet-400'
+          }`}
         >
           <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
-          Next insight
+          {fetchError ? 'Failed — try again' : 'Next insight'}
         </button>
       </div>
     </Card>

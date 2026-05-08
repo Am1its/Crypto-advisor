@@ -147,15 +147,36 @@ async function fetchNews(symbols) {
   }
 }
 
+let _fallbackIndex = 0;
+
 function getFallbackInsight(investorType, assets) {
+  const a0 = assets[0] || 'BTC';
+  const a1 = assets[1] || 'ETH';
+  const pair = `${a0} and ${a1}`;
   const tips = {
-    HODLer: `As a HODLer focused on ${assets.slice(0, 2).join(' and ')}, consider setting calendar reminders to review your position quarterly rather than daily — reducing emotional decisions is your edge. Dollar-cost averaging on dips below your entry price can strengthen your long-term position without market-timing risk.`,
-    'Day Trader': `For ${assets[0] || 'your assets'}, watch the 4-hour RSI and volume profile before entering — today's volatility windows are typically 9–11 AM and 2–4 PM UTC. Stick to a maximum 2% portfolio risk per trade and always define your stop-loss before entry, not after.`,
-    'NFT Collector': `Floor price trends on ${assets[0] || 'ETH'}-based collections are closely correlated with ETH gas fees — low gas windows are often the best times to mint or list. Track social sentiment on Discord and Twitter before any large purchase; community health is a stronger signal than floor price alone.`,
+    HODLer: [
+      `As a HODLer focused on ${pair}, set calendar reminders to review your position quarterly rather than daily — reducing emotional decisions is your edge. Dollar-cost averaging on dips below your entry price can strengthen your long-term position without market-timing risk.`,
+      `The strongest HODLer strategy combines conviction with discipline — pick a fixed DCA amount for ${a0} and stick to it regardless of market conditions. Historical data shows ${a0} rewards patience over a 4-year cycle more than any short-term timing strategy.`,
+      `Diversify across ${pair} without overcomplicating your strategy — rebalance only when one asset exceeds 60% of your portfolio. The biggest risk for a HODLer isn't volatility, it's abandoning the strategy during a dip.`,
+    ],
+    'Day Trader': [
+      `For ${a0}, watch the 4-hour RSI and volume profile before entering — volatility windows are typically 9–11 AM and 2–4 PM UTC. Stick to a maximum 2% portfolio risk per trade and always define your stop-loss before entry, not after.`,
+      `The best ${a0} day trades come from patience — wait for high-probability setups at key support/resistance levels before entering. Cut losers at 1.5× your average win to maintain positive expectancy over time.`,
+      `Use ${a0} volume spikes as confirmation before entering a breakout trade — price moves on thin volume often reverse quickly. Consider scaling out in thirds at predetermined targets rather than exiting your full position at once.`,
+    ],
+    'NFT Collector': [
+      `Floor price trends on ${a0}-based collections are closely correlated with ETH gas fees — low gas windows are often the best times to mint or list. Track social sentiment on Discord before any large purchase; community health is a stronger signal than floor price alone.`,
+      `Before any significant NFT purchase, check on-chain data for wash trading — unusually high volume with few unique wallets is a red flag. A falling floor with rising unique holder count is often more bullish than the reverse.`,
+      `The best NFT entry points come after brief floor corrections, not pumps — monitor collection velocity (unique buyers per day) as a health indicator. Social proof on ${a0}'s ecosystem communities is often a stronger signal than price charts alone.`,
+    ],
   };
+  const pool = tips[investorType] || tips['HODLer'];
+  const text = pool[_fallbackIndex % pool.length];
+  _fallbackIndex++;
   return {
-    id: `ai-${new Date().toISOString().split('T')[0]}`,
-    text: tips[investorType] || tips['HODLer'],
+    id: `ai-${Date.now()}`,
+    text,
+    source: 'fallback',
   };
 }
 
@@ -184,7 +205,7 @@ async function fetchAIInsight(investorType, assets, apiKey) {
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) throw new Error('Empty response');
-    return { id: `ai-${new Date().toISOString().split('T')[0]}`, text };
+    return { id: `ai-${Date.now()}`, text, source: 'openrouter' };
   } catch (err) {
     console.error('OpenRouter error:', err.message);
     return getFallbackInsight(investorType, assets);
