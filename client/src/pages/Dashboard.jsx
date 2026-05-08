@@ -261,10 +261,33 @@ function NewsCard({ news, votes, onVote }) {
   );
 }
 
-function MemeCard({ meme, votes, onVote }) {
+function MemeCard({ meme: initialMeme, votes, onVote }) {
+  const [meme, setMeme] = useState(initialMeme);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fading, setFading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+
+  const handleNext = async () => {
+    setRefreshing(true);
+    setFetchError(false);
+    try {
+      const { data } = await client.get('/dashboard/meme');
+      setFading(true);
+      setTimeout(() => {
+        setMeme(data.meme);
+        setFading(false);
+      }, 200);
+    } catch {
+      setFetchError(true);
+      setTimeout(() => setFetchError(false), 3000);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <Card accent="bg-rose-400" icon={ImageIcon} iconColor="text-rose-400" title="Fun Crypto Meme">
-      <div className="flex flex-col gap-4 flex-1">
+      <div className={`flex flex-col gap-4 flex-1 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}>
         <div className="rounded-xl overflow-hidden bg-gray-800/60 flex items-center justify-center min-h-52">
           <img
             src={meme.url}
@@ -275,8 +298,18 @@ function MemeCard({ meme, votes, onVote }) {
         </div>
         <div className="flex items-end justify-between gap-4 mt-auto">
           <p className="text-gray-300 text-sm leading-relaxed italic">"{meme.caption}"</p>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex flex-col items-end gap-2">
             <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
+            <button
+              onClick={handleNext}
+              disabled={refreshing}
+              className={`flex items-center gap-1.5 text-xs transition-colors disabled:opacity-40 ${
+                fetchError ? 'text-red-400' : 'text-rose-400/60 hover:text-rose-400'
+              }`}
+            >
+              <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
+              {fetchError ? 'Failed — try again' : 'Next meme'}
+            </button>
           </div>
         </div>
       </div>

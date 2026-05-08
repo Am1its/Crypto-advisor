@@ -242,6 +242,16 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/meme', authMiddleware, async (req, res) => {
+  try {
+    const meme = await fetchMeme();
+    res.json({ meme });
+  } catch (err) {
+    console.error('Meme refresh error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/insight', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
   try {
