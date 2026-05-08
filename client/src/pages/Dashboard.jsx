@@ -343,8 +343,11 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-2.5 pl-3 border-l border-gray-800">
               <Link to="/profile" title="Edit profile"
-                className="w-7 h-7 rounded-full bg-amber-400/15 border border-amber-400/30 flex items-center justify-center hover:border-amber-400 transition-colors">
-                <span className="text-amber-400 text-xs font-bold">{initials(user)}</span>
+                className="w-7 h-7 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center hover:border-amber-400 transition-colors overflow-hidden">
+                {user.avatarEmoji
+                  ? <span className="text-base leading-none">{user.avatarEmoji}</span>
+                  : <span className="text-amber-400 text-xs font-bold">{initials(user)}</span>
+                }
               </Link>
               <span className="text-gray-300 text-sm hidden sm:block">{user.name || user.email}</span>
             </div>

@@ -7,13 +7,19 @@ const CRYPTO_OPTIONS = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX'
 const INVESTOR_TYPES = ['HODLer', 'Day Trader', 'NFT Collector'];
 const CONTENT_TYPES  = ['Market News', 'Charts', 'AI Insights', 'Memes'];
 
-const AVATAR_COLORS = [
-  { bg: 'bg-amber-400',   text: 'text-gray-900',  value: 'amber'  },
-  { bg: 'bg-violet-500',  text: 'text-white',      value: 'violet' },
-  { bg: 'bg-sky-400',     text: 'text-gray-900',   value: 'sky'    },
-  { bg: 'bg-rose-400',    text: 'text-white',       value: 'rose'   },
-  { bg: 'bg-emerald-400', text: 'text-gray-900',   value: 'emerald'},
-  { bg: 'bg-orange-400',  text: 'text-gray-900',   value: 'orange' },
+const AVATARS = [
+  { emoji: '🚀', label: 'To the moon'     },
+  { emoji: '🦁', label: 'HODL lion'       },
+  { emoji: '🐂', label: 'Bull market'     },
+  { emoji: '🐻', label: 'Bear market'     },
+  { emoji: '🐳', label: 'Crypto whale'    },
+  { emoji: '🦊', label: 'MetaMask fox'    },
+  { emoji: '🤖', label: 'Trading bot'     },
+  { emoji: '🐸', label: 'Pepe'            },
+  { emoji: '💎', label: 'Diamond hands'   },
+  { emoji: '🦄', label: 'Unicorn'         },
+  { emoji: '🤠', label: 'Crypto cowboy'   },
+  { emoji: '👽', label: 'From the future' },
 ];
 
 function Chip({ label, selected, onClick }) {
@@ -43,7 +49,7 @@ export default function Profile() {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [name, setName]               = useState(storedUser.name || '');
-  const [avatarColor, setAvatarColor] = useState(storedUser.avatarColor || 'amber');
+  const [avatarEmoji, setAvatarEmoji] = useState(storedUser.avatarEmoji || '🚀');
   const [cryptoAssets, setCryptoAssets] = useState([]);
   const [investorType, setInvestorType] = useState('');
   const [contentTypes, setContentTypes] = useState([]);
@@ -70,12 +76,11 @@ export default function Profile() {
     try {
       await client.put('/profile', {
         name,
-        avatarColor,
         crypto_assets: cryptoAssets,
         investor_type: investorType,
         content_types: contentTypes,
       });
-      const updated = { ...storedUser, name, avatarColor };
+      const updated = { ...storedUser, name, avatarEmoji };
       localStorage.setItem('user', JSON.stringify(updated));
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -86,10 +91,7 @@ export default function Profile() {
     }
   };
 
-  const activeColor = AVATAR_COLORS.find(c => c.value === avatarColor) || AVATAR_COLORS[0];
-  const initials = name
-    ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    : storedUser.email?.[0]?.toUpperCase() || '?';
+  const activeAvatar = AVATARS.find(a => a.emoji === avatarEmoji) || AVATARS[0];
 
   if (loading) {
     return (
@@ -141,19 +143,25 @@ export default function Profile() {
             <Section title="Profile Picture">
               <div className="flex flex-col items-center gap-5">
                 {/* Avatar preview */}
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold ${activeColor.bg} ${activeColor.text} shadow-lg`}>
-                  {initials}
+                <div className="w-24 h-24 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center text-5xl shadow-lg">
+                  {avatarEmoji}
                 </div>
+                <p className="text-gray-400 text-xs -mt-2">{activeAvatar.label}</p>
 
-                {/* Color picker */}
+                {/* Emoji picker */}
                 <div>
-                  <p className="text-gray-500 text-xs text-center mb-3">Choose avatar color</p>
-                  <div className="flex gap-2 justify-center">
-                    {AVATAR_COLORS.map(c => (
-                      <button key={c.value} onClick={() => setAvatarColor(c.value)}
-                        className={`w-8 h-8 rounded-full ${c.bg} transition-transform hover:scale-110 ${
-                          avatarColor === c.value ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110' : ''
-                        }`} />
+                  <p className="text-gray-500 text-xs text-center mb-3">Choose your avatar</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {AVATARS.map(a => (
+                      <button key={a.emoji} onClick={() => setAvatarEmoji(a.emoji)}
+                        title={a.label}
+                        className={`w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-110 ${
+                          avatarEmoji === a.emoji
+                            ? 'bg-amber-400/20 ring-2 ring-amber-400 scale-110'
+                            : 'bg-gray-800 hover:bg-gray-700'
+                        }`}>
+                        {a.emoji}
+                      </button>
                     ))}
                   </div>
                 </div>
