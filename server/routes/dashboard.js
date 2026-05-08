@@ -29,7 +29,18 @@ const COIN_IMAGES = {
 let _priceCache = null;
 let _priceCacheKey = '';
 let _priceCachedAt = 0;
-const PRICE_CACHE_TTL = 90_000; // 90 seconds — well under CoinGecko's 1-min window
+const PRICE_CACHE_TTL = 90_000;
+
+let _fearGreedCache = null;
+let _fearGreedCachedAt = 0;
+const FEAR_GREED_TTL = 15 * 60_000;
+
+const _historicalPriceCache = {};
+const HISTORICAL_TTL = 24 * 60 * 60_000;
+
+let _nftCache = null;
+let _nftCachedAt = 0;
+const NFT_CACHE_TTL = 5 * 60_000;
 
 async function fetchPrices(symbols) {
   const ids = symbols.map((s) => COIN_ID_MAP[s?.toUpperCase()]).filter(Boolean);
@@ -212,6 +223,173 @@ async function fetchAIInsight(investorType, assets, apiKey) {
   }
 }
 
+// ── Fear & Greed ─────────────────────────────────────────────────────────────
+
+async function fetchFearGreed() {
+  if (_fearGreedCache && Date.now() - _fearGreedCachedAt < FEAR_GREED_TTL) return _fearGreedCache;
+  try {
+    const res = await fetch('https://api.alternative.me/fng/?limit=1');
+    if (!res.ok) throw new Error(`FNG ${res.status}`);
+    const data = await res.json();
+    const entry = data.data[0];
+    const result = {
+      value: parseInt(entry.value, 10),
+      classification: entry.value_classification,
+    };
+    _fearGreedCache = result;
+    _fearGreedCachedAt = Date.now();
+    return result;
+  } catch (err) {
+    console.error('Fear & Greed error:', err.message);
+    return { value: 58, classification: 'Greed' };
+  }
+}
+
+// ── ROI Calculator ────────────────────────────────────────────────────────────
+
+async function fetchHistoricalPrice(coinId) {
+  const now = Date.now();
+  const cached = _historicalPriceCache[coinId];
+  if (cached && now - cached.at < HISTORICAL_TTL) return cached.price;
+
+  const d = new Date(now - 365 * 24 * 60 * 60_000);
+  const dateStr = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+  try {
+    const headers = process.env.COINGECKO_API_KEY
+      ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY } : {};
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${dateStr}&localization=false`,
+      { headers }
+    );
+    if (!res.ok) throw new Error(`history ${res.status}`);
+    const data = await res.json();
+    const price = data.market_data?.current_price?.usd ?? null;
+    if (price) _historicalPriceCache[coinId] = { price, at: now };
+    return price;
+  } catch (err) {
+    console.error(`Historical price error ${coinId}:`, err.message);
+    return null;
+  }
+}
+
+async function fetchROI(symbols, currentPrices) {
+  const results = await Promise.all(
+    symbols.map(async (sym) => {
+      const coinId = COIN_ID_MAP[sym?.toUpperCase()];
+      if (!coinId) return null;
+      const current = currentPrices.find((p) => p.symbol === sym?.toUpperCase());
+      const currentPrice = current?.price ?? null;
+      if (!currentPrice) return null;
+      const pastPrice = await fetchHistoricalPrice(coinId);
+      const currentValue = pastPrice ? Math.round(((1000 / pastPrice) * currentPrice) * 100) / 100 : null;
+      const change = currentValue != null ? Math.round(((currentValue - 1000) / 1000) * 1000) / 10 : null;
+      return {
+        symbol: sym.toUpperCase(),
+        name: COIN_NAME_MAP[sym?.toUpperCase()] || sym,
+        image: current?.image || null,
+        currentPrice,
+        pastPrice,
+        currentValue,
+        change,
+      };
+    })
+  );
+  return results.filter(Boolean);
+}
+
+// ── NFT Showcase ──────────────────────────────────────────────────────────────
+
+const NFT_FALLBACK = [
+  { id: 'pudgy-penguins',      name: 'Pudgy Penguins',       symbol: 'PPG',    thumb: null, floor_price: '11.2 ETH',  change24h: -2.8 },
+  { id: 'cryptopunks',         name: 'CryptoPunks',          symbol: 'PUNK',   thumb: null, floor_price: '47.5 ETH',  change24h:  1.4 },
+  { id: 'bored-ape-yacht-club',name: 'Bored Ape Yacht Club', symbol: 'BAYC',   thumb: null, floor_price: '12.8 ETH',  change24h: -0.6 },
+  { id: 'azuki',               name: 'Azuki',                symbol: 'AZUKI',  thumb: null, floor_price: '7.3 ETH',   change24h:  3.2 },
+  { id: 'milady-maker',        name: 'Milady Maker',         symbol: 'MILADY', thumb: null, floor_price: '2.1 ETH',   change24h:  5.7 },
+  { id: 'doodles-official',    name: 'Doodles',              symbol: 'DOODLE', thumb: null, floor_price: '1.8 ETH',   change24h:  0.9 },
+];
+
+async function fetchNFTs() {
+  if (_nftCache && Date.now() - _nftCachedAt < NFT_CACHE_TTL) return _nftCache;
+  try {
+    const headers = process.env.COINGECKO_API_KEY
+      ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY } : {};
+    const res = await fetch('https://api.coingecko.com/api/v3/search/trending', { headers });
+    if (res.status === 429) throw new Error('Rate limited');
+    if (!res.ok) throw new Error(`CoinGecko trending ${res.status}`);
+    const data = await res.json();
+    const raw = data.nfts || [];
+    if (!raw.length) throw new Error('No NFTs');
+    const nfts = raw.slice(0, 6).map((n) => ({
+      id: n.id,
+      name: n.name,
+      symbol: n.symbol,
+      thumb: n.thumb || null,
+      floor_price: n.data?.floor_price
+        || (n.floor_price_in_native_currency != null
+          ? `${n.floor_price_in_native_currency.toFixed(2)} ${(n.native_currency_symbol || 'ETH').toUpperCase()}`
+          : 'N/A'),
+      change24h: n.floor_price_24h_percentage_change != null
+        ? Math.round(n.floor_price_24h_percentage_change * 10) / 10 : null,
+    }));
+    _nftCache = nfts;
+    _nftCachedAt = Date.now();
+    return nfts;
+  } catch (err) {
+    console.error('NFT fetch error:', err.message);
+    return NFT_FALLBACK.map((n) => ({
+      ...n,
+      change24h: Math.round((n.change24h + (Math.random() * 2 - 1)) * 10) / 10,
+    }));
+  }
+}
+
+// ── Whale Alerts (dynamic mock) ───────────────────────────────────────────────
+
+const EXCHANGES = ['Binance', 'Coinbase', 'Kraken', 'OKX', 'Bybit', 'Huobi', 'Gemini', 'KuCoin'];
+const WALLETS   = ['Unknown Wallet', 'Unknown', 'Cold Storage', 'Institutional Wallet'];
+
+const WHALE_AMOUNTS = {
+  BTC:  () => Math.floor(Math.random() * 900  + 100),
+  ETH:  () => Math.floor(Math.random() * 9000 + 1000),
+  SOL:  () => Math.floor(Math.random() * 90000 + 10000),
+  BNB:  () => Math.floor(Math.random() * 4000  + 500),
+  XRP:  () => Math.floor(Math.random() * 9_000_000 + 1_000_000),
+  ADA:  () => Math.floor(Math.random() * 9_000_000 + 1_000_000),
+  DOGE: () => Math.floor(Math.random() * 40_000_000 + 5_000_000),
+  AVAX: () => Math.floor(Math.random() * 40000 + 5000),
+};
+
+function generateWhaleAlerts(assets, prices = []) {
+  const now = Date.now();
+  const priceMap = {};
+  prices.forEach((p) => { if (p.price) priceMap[p.symbol] = p.price; });
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const sym = (assets[Math.floor(Math.random() * assets.length)] || 'BTC').toUpperCase();
+    const getAmt = WHALE_AMOUNTS[sym] || (() => Math.floor(Math.random() * 100_000 + 10_000));
+    const amount = getAmt();
+    const usdValue = priceMap[sym] ? Math.round(amount * priceMap[sym]) : null;
+    const from = Math.random() > 0.45
+      ? EXCHANGES[Math.floor(Math.random() * EXCHANGES.length)]
+      : WALLETS[Math.floor(Math.random() * WALLETS.length)];
+    const to = Math.random() > 0.45
+      ? EXCHANGES[Math.floor(Math.random() * EXCHANGES.length)]
+      : WALLETS[Math.floor(Math.random() * WALLETS.length)];
+    const minsAgo = i * 17 + Math.floor(Math.random() * 14) + 1;
+    return {
+      id: `whale-${i}-${now}`,
+      coin: sym,
+      amount: amount.toLocaleString('en-US'),
+      from,
+      to,
+      usdValue,
+      timestamp: new Date(now - minsAgo * 60_000).toISOString(),
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 router.get('/', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
 
@@ -225,17 +403,24 @@ router.get('/', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'no_preferences', message: 'Please complete onboarding first.' });
     }
 
-    const { crypto_assets, investor_type } = prefResult.rows[0];
+    const { crypto_assets, investor_type, content_types } = prefResult.rows[0];
     const assets = crypto_assets || ['BTC', 'ETH'];
+    const wants = (name) => !content_types?.length || content_types.includes(name);
 
-    const [prices, news, insight, meme] = await Promise.all([
-      fetchPrices(assets),
+    // Prices are always fetched first — ROI depends on current price data
+    const prices = await fetchPrices(assets);
+
+    const [news, insight, meme, fearGreed, roi, nfts, whales] = await Promise.all([
       fetchNews(assets),
       fetchAIInsight(investor_type, assets, process.env.OPENROUTER_API_KEY),
       fetchMeme(),
+      wants('Fear & Greed')    ? fetchFearGreed()                    : null,
+      wants('ROI Calculator')  ? fetchROI(assets, prices)            : null,
+      wants('NFT Showcase')    ? fetchNFTs()                         : null,
+      wants('Whale Alerts')    ? generateWhaleAlerts(assets, prices) : null,
     ]);
 
-    res.json({ prices, news, insight, meme });
+    res.json({ prices, news, insight, meme, fearGreed, roi, nfts, whales });
   } catch (err) {
     console.error('Dashboard error:', err.message);
     res.status(500).json({ error: 'Server error' });

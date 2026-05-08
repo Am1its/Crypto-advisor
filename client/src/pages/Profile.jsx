@@ -6,7 +6,7 @@ import client from '../api/client';
 
 const CRYPTO_OPTIONS = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX'];
 const INVESTOR_TYPES = ['HODLer', 'Day Trader', 'NFT Collector'];
-const CONTENT_TYPES  = ['Market News', 'Charts', 'AI Insights', 'Memes'];
+const CONTENT_TYPES  = ['Market News', 'Charts', 'AI Insights', 'Memes', 'Fear & Greed', 'ROI Calculator', 'NFT Showcase', 'Whale Alerts'];
 
 const AVATARS = [
   { emoji: '🚀', label: 'To the moon'     },

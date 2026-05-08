@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, LogOut, RefreshCw,
   ThumbsUp, ThumbsDown, Newspaper, Sparkles, ImageIcon,
   BarChart2, ExternalLink, ChevronsUpDown,
+  Activity, Layers, Zap, DollarSign,
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -63,118 +63,6 @@ function Sparkline({ prices, change24h, coinId }) {
 
 // ── Shared components ──────────────────────────────────────────────────────
 
-function SkeletonPulse({ className }) {
-  return <div className={`animate-pulse bg-gray-800 rounded ${className}`} />;
-}
-
-function PricesSkeleton() {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
-      <div className="h-0.5 flex-shrink-0 bg-amber-400/30" />
-      <div className="px-5 pt-4 pb-5 flex flex-col gap-3 flex-1 min-h-0">
-        <div className="flex items-center justify-between flex-shrink-0">
-          <SkeletonPulse className="h-4 w-28" />
-          <SkeletonPulse className="h-6 w-24 rounded-lg" />
-        </div>
-        <div className="flex-1 min-h-0 flex flex-col gap-0">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-2.5 border-b border-gray-800/70 last:border-0">
-              <div className="flex items-center gap-3">
-                <SkeletonPulse className="w-8 h-8 rounded-full" />
-                <div className="flex flex-col gap-1.5">
-                  <SkeletonPulse className="h-3.5 w-10" />
-                  <SkeletonPulse className="h-2.5 w-16" />
-                </div>
-              </div>
-              <SkeletonPulse className="hidden sm:block h-7 w-20 rounded" />
-              <div className="flex flex-col items-end gap-1.5">
-                <SkeletonPulse className="h-3.5 w-16" />
-                <SkeletonPulse className="h-4 w-12 rounded-full" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="pt-3 border-t border-gray-800/60 flex-shrink-0">
-          <SkeletonPulse className="h-6 w-36 rounded-full" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function NewsSkeleton() {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
-      <div className="h-0.5 flex-shrink-0 bg-sky-400/30" />
-      <div className="px-5 pt-4 pb-5 flex flex-col gap-3 flex-1 min-h-0">
-        <SkeletonPulse className="h-4 w-28 flex-shrink-0" />
-        <div className="flex-1 min-h-0 flex flex-col gap-0">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex gap-3 py-3 border-b border-gray-800/60 last:border-0">
-              <SkeletonPulse className="w-4 h-3.5 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 flex flex-col gap-2">
-                <SkeletonPulse className="h-3.5 w-full" />
-                <SkeletonPulse className="h-3.5 w-4/5" />
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-1.5">
-                    <SkeletonPulse className="h-5 w-24 rounded-full" />
-                    <SkeletonPulse className="h-3 w-10" />
-                  </div>
-                  <SkeletonPulse className="h-6 w-28 rounded-full" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AIInsightSkeleton() {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
-      <div className="h-0.5 flex-shrink-0 bg-violet-500/30" />
-      <div className="px-5 pt-4 pb-5 flex flex-col gap-3 flex-1 min-h-0">
-        <SkeletonPulse className="h-4 w-36 flex-shrink-0" />
-        <div className="rounded-xl border border-violet-500/10 p-4 flex-1 min-h-0 flex flex-col gap-3">
-          <SkeletonPulse className="h-8 w-8" />
-          <SkeletonPulse className="h-3.5 w-full -mt-1" />
-          <SkeletonPulse className="h-3.5 w-full" />
-          <SkeletonPulse className="h-3.5 w-4/5" />
-          <SkeletonPulse className="h-3.5 w-3/5" />
-          <div className="flex items-center justify-between mt-auto">
-            <SkeletonPulse className="h-5 w-28 rounded-full" />
-            <SkeletonPulse className="h-3 w-32" />
-          </div>
-        </div>
-        <SkeletonPulse className="h-6 w-28 rounded-full flex-shrink-0" />
-      </div>
-    </div>
-  );
-}
-
-function MemeSkeleton() {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
-      <div className="h-0.5 flex-shrink-0 bg-rose-400/30" />
-      <div className="px-5 pt-4 pb-5 flex flex-col gap-3 flex-1 min-h-0">
-        <SkeletonPulse className="h-4 w-32 flex-shrink-0" />
-        <div className="flex-1 min-h-0 rounded-xl overflow-hidden">
-          <SkeletonPulse className="w-full h-full rounded-xl" />
-        </div>
-        <div className="flex items-end justify-between gap-4 flex-shrink-0">
-          <div className="flex flex-col gap-1.5 flex-1">
-            <SkeletonPulse className="h-3.5 w-full" />
-            <SkeletonPulse className="h-3.5 w-2/3" />
-          </div>
-          <SkeletonPulse className="h-6 w-28 rounded-full flex-shrink-0" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function VoteButtons({ section, itemId, votes, onVote }) {
   const key = `${section}:${itemId}`;
   const current = votes[key];
@@ -212,13 +100,12 @@ function VoteButtons({ section, itemId, votes, onVote }) {
   );
 }
 
-// Card: accepts optional `action` slot rendered right of the title
 function Card({ accent, icon: Icon, iconColor, title, action, children, className = '' }) {
   return (
-    <div className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col ${className}`}>
+    <div className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col break-inside-avoid mb-5 ${className}`}>
       <div className={`h-0.5 flex-shrink-0 ${accent}`} />
-      <div className="px-5 pt-4 pb-5 flex flex-col gap-3 flex-1 min-h-0">
-        <div className="flex items-center justify-between gap-2 flex-shrink-0">
+      <div className="px-5 pt-4 pb-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Icon size={16} className={iconColor} />
             <span className={`text-sm font-bold uppercase tracking-widest ${iconColor}`}>{title}</span>
@@ -231,13 +118,36 @@ function Card({ accent, icon: Icon, iconColor, title, action, children, classNam
   );
 }
 
+// ── Skeletons (masonry-compatible) ─────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={`animate-pulse bg-gray-800 rounded ${className}`} />;
+}
+
+function SkeletonCard({ rows = 4, hasImage = false, hasGauge = false }) {
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden break-inside-avoid mb-5">
+      <div className="h-0.5 bg-gray-800/60 animate-pulse" />
+      <div className="px-5 pt-4 pb-5 flex flex-col gap-3">
+        <SkeletonBlock className="h-4 w-32" />
+        {hasGauge && <SkeletonBlock className="h-28 w-full rounded-xl" />}
+        {hasImage && <SkeletonBlock className="h-40 w-full rounded-xl" />}
+        {Array.from({ length: rows }).map((_, i) => (
+          <SkeletonBlock key={i} className={`h-3.5 ${i % 3 === 2 ? 'w-3/4' : 'w-full'}`} />
+        ))}
+        <SkeletonBlock className="h-6 w-28 rounded-full mt-1" />
+      </div>
+    </div>
+  );
+}
+
 // ── Section cards ──────────────────────────────────────────────────────────
 
 const SORT_OPTIONS = [
-  { value: 'default',    label: 'Default'         },
+  { value: 'default',    label: 'Default'          },
   { value: 'price-desc', label: 'Price: High → Low' },
   { value: 'price-asc',  label: 'Price: Low → High' },
-  { value: 'change',     label: '24h Change'       },
+  { value: 'change',     label: '24h Change'        },
 ];
 
 function PricesCard({ prices, votes, onVote }) {
@@ -265,7 +175,7 @@ function PricesCard({ prices, votes, onVote }) {
 
   return (
     <Card accent="bg-amber-400" icon={BarChart2} iconColor="text-amber-400" title="Coin Prices" action={sortAction}>
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+      <div className="max-h-[340px] overflow-y-auto scrollbar-hide">
         {sorted.map((coin, i) => (
           <div key={coin.symbol}
             className={`flex items-center justify-between py-2.5 ${i < sorted.length - 1 ? 'border-b border-gray-800/70' : ''}`}>
@@ -296,7 +206,7 @@ function PricesCard({ prices, votes, onVote }) {
           </div>
         ))}
       </div>
-      <div className="pt-3 border-t border-gray-800/60 flex-shrink-0">
+      <div className="pt-3 border-t border-gray-800/60">
         <VoteButtons section="prices" itemId="prices-today" votes={votes} onVote={onVote} />
       </div>
     </Card>
@@ -307,26 +217,22 @@ function AIInsightCard({ insight, votes, onVote }) {
   const isOpenRouter = insight.source === 'openrouter';
   return (
     <Card accent="bg-violet-500" icon={Sparkles} iconColor="text-violet-400" title="AI Insight of the Day">
-      <div className="relative rounded-xl overflow-hidden flex-1 min-h-0">
+      <div className="rounded-xl border border-violet-500/20 p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent pointer-events-none" />
-        <div className="relative p-4 border border-violet-500/20 rounded-xl h-full overflow-y-auto scrollbar-hide">
-          <span className="text-violet-400/60 text-5xl font-serif leading-none select-none">"</span>
-          <p className="text-gray-200 text-sm leading-relaxed -mt-3">{insight.text}</p>
-          <div className="flex items-center justify-between mt-3">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              isOpenRouter
-                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
-                : 'bg-gray-800 text-gray-500 border border-gray-700'
-            }`}>
-              {isOpenRouter ? '⚡ OpenRouter AI' : '📋 Curated tip'}
-            </span>
-            <p className="text-violet-400/50 text-xs">— AI-generated insight</p>
-          </div>
+        <span className="text-violet-400/60 text-5xl font-serif leading-none select-none">"</span>
+        <p className="text-gray-200 text-sm leading-relaxed -mt-3">{insight.text}</p>
+        <div className="flex items-center justify-between mt-3">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            isOpenRouter
+              ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+              : 'bg-gray-800 text-gray-500 border border-gray-700'
+          }`}>
+            {isOpenRouter ? '⚡ OpenRouter AI' : '📋 Curated tip'}
+          </span>
+          <p className="text-violet-400/50 text-xs">— AI-generated insight</p>
         </div>
       </div>
-      <div className="pt-1 flex-shrink-0">
-        <VoteButtons section="ai" itemId={insight.id} votes={votes} onVote={onVote} />
-      </div>
+      <VoteButtons section="ai" itemId={insight.id} votes={votes} onVote={onVote} />
     </Card>
   );
 }
@@ -334,19 +240,15 @@ function AIInsightCard({ insight, votes, onVote }) {
 function NewsCard({ news, votes, onVote }) {
   return (
     <Card accent="bg-sky-400" icon={Newspaper} iconColor="text-sky-400" title="Market News">
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+      <div className="max-h-[420px] overflow-y-auto scrollbar-hide">
         {news.map((article, i) => (
           <div key={article.id}
             className={`group py-3 ${i < news.length - 1 ? 'border-b border-gray-800/60' : ''}`}>
             <div className="flex gap-3">
               <span className="text-gray-700 font-bold text-sm w-4 flex-shrink-0 mt-0.5">{i + 1}</span>
               <div className="flex-1 min-w-0">
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-gray-200 text-sm font-medium leading-snug hover:text-white transition-colors flex items-start gap-1"
-                >
+                <a href={article.url} target="_blank" rel="noreferrer"
+                  className="text-gray-200 text-sm font-medium leading-snug hover:text-white transition-colors flex items-start gap-1">
                   <span className="line-clamp-2">{article.title}</span>
                   <ExternalLink size={11} className="flex-shrink-0 mt-0.5 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </a>
@@ -369,21 +271,189 @@ function NewsCard({ news, votes, onVote }) {
 function MemeCard({ meme, votes, onVote }) {
   return (
     <Card accent="bg-rose-400" icon={ImageIcon} iconColor="text-rose-400" title="Fun Crypto Meme">
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-3">
-        <div className="rounded-xl overflow-hidden bg-gray-800/60 flex items-center justify-center flex-1 min-h-0">
-          <img
-            src={meme.url}
-            alt={meme.caption}
-            className="w-full h-full object-contain"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
+      <div className="rounded-xl overflow-hidden bg-gray-800/60">
+        <img
+          src={meme.url}
+          alt={meme.caption}
+          className="w-full object-contain max-h-64"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      </div>
+      <div className="flex items-end justify-between gap-4">
+        <p className="text-gray-300 text-sm leading-relaxed italic">"{meme.caption}"</p>
+        <div className="flex-shrink-0">
+          <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
         </div>
-        <div className="flex items-end justify-between gap-4 flex-shrink-0">
-          <p className="text-gray-300 text-sm leading-relaxed italic">"{meme.caption}"</p>
-          <div className="flex-shrink-0">
-            <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
+      </div>
+    </Card>
+  );
+}
+
+// ── New personalized widgets ───────────────────────────────────────────────
+
+const ARC_R = 70;
+const ARC_LEN = Math.PI * ARC_R; // ~219.9
+
+function fearGreedColors(v) {
+  if (v <= 25) return { text: 'text-red-400',    arc: '#ef4444' };
+  if (v <= 46) return { text: 'text-orange-400', arc: '#f97316' };
+  if (v <= 54) return { text: 'text-yellow-400', arc: '#eab308' };
+  if (v <= 75) return { text: 'text-lime-400',   arc: '#84cc16' };
+  return            { text: 'text-green-400',    arc: '#22c55e' };
+}
+
+function FearGreedCard({ fearGreed, votes, onVote }) {
+  const { value, classification } = fearGreed;
+  const { text, arc } = fearGreedColors(value);
+  const dashOffset = ARC_LEN * (1 - value / 100);
+  // Standard-math angle: π (left=fear) → 0 (right=greed)
+  const angle = Math.PI * (1 - value / 100);
+  const nx = 90 + 56 * Math.cos(angle);
+  const ny = 82 - 56 * Math.sin(angle);
+
+  return (
+    <Card accent="bg-orange-500" icon={Activity} iconColor="text-orange-400" title="Fear & Greed Index">
+      <div className="flex flex-col items-center gap-1 py-1">
+        {/* Gauge arc — sweep=1 draws the top semicircle in SVG coords */}
+        <svg viewBox="0 0 180 88" className="w-full max-w-[220px] mx-auto">
+          <path d="M 20 82 A 70 70 0 0 1 160 82"
+            fill="none" stroke="#1f2937" strokeWidth="10" strokeLinecap="round" />
+          <path d="M 20 82 A 70 70 0 0 1 160 82"
+            fill="none" stroke={arc} strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={ARC_LEN} strokeDashoffset={dashOffset} />
+          <line x1="90" y1="82" x2={nx} y2={ny}
+            stroke={arc} strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="90" cy="82" r="4" fill={arc} />
+        </svg>
+        <div className={`text-4xl font-black -mt-1 ${text}`}>{value}</div>
+        <div className={`text-sm font-bold ${text}`}>{classification}</div>
+        <div className="flex justify-between w-full text-xs text-gray-700 px-2 mt-1">
+          <span>Fear</span>
+          <span>Neutral</span>
+          <span>Greed</span>
+        </div>
+        <p className="text-gray-600 text-xs mt-0.5">Source: Alternative.me · updated daily</p>
+      </div>
+      <div className="pt-2 border-t border-gray-800/60">
+        <VoteButtons section="feargreed" itemId="feargreed-today" votes={votes} onVote={onVote} />
+      </div>
+    </Card>
+  );
+}
+
+function ROICard({ roi, votes, onVote }) {
+  return (
+    <Card accent="bg-emerald-500" icon={DollarSign} iconColor="text-emerald-400" title="$1,000 ROI · 1 Year">
+      <p className="text-gray-500 text-xs -mt-1">What $1,000 invested exactly one year ago is worth today</p>
+      <div>
+        {roi.map((coin, i) => (
+          <div key={coin.symbol}
+            className={`flex items-center justify-between py-2.5 ${i < roi.length - 1 ? 'border-b border-gray-800/60' : ''}`}>
+            <div className="flex items-center gap-2.5">
+              {coin.image
+                ? <img src={coin.image} alt={coin.symbol} className="w-7 h-7 rounded-full" />
+                : <div className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">{coin.symbol[0]}</div>
+              }
+              <div>
+                <p className="text-white text-sm font-semibold">{coin.symbol}</p>
+                {coin.pastPrice != null && (
+                  <p className="text-gray-600 text-xs">
+                    {fmt(coin.pastPrice)} → {fmt(coin.currentPrice)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              {coin.currentValue != null ? (
+                <>
+                  <p className={`text-sm font-bold ${coin.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ${coin.currentValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  </p>
+                  <span className={`text-xs ${coin.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(1)}%
+                  </span>
+                </>
+              ) : (
+                <p className="text-gray-600 text-xs">Unavailable</p>
+              )}
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+      <div className="pt-1 border-t border-gray-800/60">
+        <VoteButtons section="roi" itemId="roi-1y" votes={votes} onVote={onVote} />
+      </div>
+    </Card>
+  );
+}
+
+function NFTCard({ nfts, votes, onVote }) {
+  return (
+    <Card accent="bg-pink-500" icon={Layers} iconColor="text-pink-400" title="Trending NFTs">
+      <div>
+        {nfts.slice(0, 6).map((nft, i) => (
+          <div key={nft.id}
+            className={`flex items-center gap-3 py-2.5 ${i < Math.min(nfts.length, 6) - 1 ? 'border-b border-gray-800/60' : ''}`}>
+            <span className="text-gray-700 font-bold text-sm w-4 flex-shrink-0">{i + 1}</span>
+            {nft.thumb
+              ? <img src={nft.thumb} alt={nft.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center text-pink-400/60 flex-shrink-0">
+                  <Layers size={14} />
+                </div>
+            }
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold truncate">{nft.name}</p>
+              <p className="text-gray-500 text-xs">{nft.floor_price}</p>
+            </div>
+            {nft.change24h != null && (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                nft.change24h >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+              }`}>
+                {nft.change24h >= 0 ? '+' : ''}{nft.change24h.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="pt-1 border-t border-gray-800/60">
+        <VoteButtons section="nft" itemId="nft-trending" votes={votes} onVote={onVote} />
+      </div>
+    </Card>
+  );
+}
+
+function WhaleAlertCard({ whales, votes, onVote }) {
+  function fmtUsd(v) {
+    if (v == null) return null;
+    return v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : `$${(v / 1e6).toFixed(1)}M`;
+  }
+
+  return (
+    <Card accent="bg-red-500" icon={Zap} iconColor="text-red-400" title="Whale Alerts">
+      <div className="max-h-[320px] overflow-y-auto scrollbar-hide">
+        {whales.map((alert) => (
+          <div key={alert.id} className="flex items-start gap-3 py-3 border-b border-gray-800/60 last:border-0">
+            <span className="text-base flex-shrink-0 mt-0.5">🚨</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-gray-200 text-sm leading-snug">
+                <span className="text-white font-bold">{alert.amount} {alert.coin}</span>
+                {' '}transferred from{' '}
+                <span className="text-amber-400">{alert.from}</span>
+                {' '}to{' '}
+                <span className="text-amber-400">{alert.to}</span>
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {fmtUsd(alert.usdValue) && (
+                  <span className="text-green-400 text-xs font-medium">{fmtUsd(alert.usdValue)}</span>
+                )}
+                <span className="text-gray-600 text-xs">{timeAgo(alert.timestamp)}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="pt-1 border-t border-gray-800/60">
+        <VoteButtons section="whale" itemId="whale-alerts" votes={votes} onVote={onVote} />
       </div>
     </Card>
   );
@@ -395,10 +465,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const [data, setData]         = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [votes, setVotes]       = useState({});
+  const [data, setData]             = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [votes, setVotes]           = useState({});
   const [refreshing, setRefreshing] = useState(false);
 
   const loadDashboard = useCallback(async (isRefresh = false) => {
@@ -439,9 +509,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen bg-gray-950 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-gray-800/60 bg-gray-900/60 backdrop-blur-sm z-10">
+      <header className="sticky top-0 z-10 border-b border-gray-800/60 bg-gray-900/60 backdrop-blur-sm">
         <div className="max-w-[1600px] mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="bg-amber-400 rounded-lg p-1.5">
@@ -482,29 +552,35 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main */}
-      <main className="flex-1 min-h-0 max-w-[1600px] w-full mx-auto px-5 py-5 flex flex-col overflow-hidden">
+      {/* Main — masonry */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-5 py-6">
         {error && (
-          <div className="flex-shrink-0 mb-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
+          <div className="mb-5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
             {error}
             <button onClick={() => loadDashboard()} className="underline text-xs">Retry</button>
           </div>
         )}
 
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-5">
+        <div className="columns-1 md:columns-2 xl:columns-3 gap-5">
           {loading ? (
             <>
-              <PricesSkeleton />
-              <NewsSkeleton />
-              <AIInsightSkeleton />
-              <MemeSkeleton />
+              <SkeletonCard rows={5} />
+              <SkeletonCard rows={6} />
+              <SkeletonCard rows={3} hasImage />
+              <SkeletonCard rows={4} hasGauge />
+              <SkeletonCard rows={5} />
+              <SkeletonCard rows={4} />
             </>
           ) : data ? (
             <>
-              <PricesCard    prices={data.prices}   votes={votes} onVote={handleVote} />
-              <NewsCard      news={data.news}        votes={votes} onVote={handleVote} />
-              <AIInsightCard insight={data.insight}  votes={votes} onVote={handleVote} />
-              <MemeCard      meme={data.meme}        votes={votes} onVote={handleVote} />
+              <PricesCard     prices={data.prices}    votes={votes} onVote={handleVote} />
+              <NewsCard       news={data.news}         votes={votes} onVote={handleVote} />
+              <AIInsightCard  insight={data.insight}   votes={votes} onVote={handleVote} />
+              <MemeCard       meme={data.meme}         votes={votes} onVote={handleVote} />
+              {data.fearGreed && <FearGreedCard  fearGreed={data.fearGreed}  votes={votes} onVote={handleVote} />}
+              {data.roi       && <ROICard        roi={data.roi}              votes={votes} onVote={handleVote} />}
+              {data.nfts      && <NFTCard        nfts={data.nfts}            votes={votes} onVote={handleVote} />}
+              {data.whales    && <WhaleAlertCard whales={data.whales}        votes={votes} onVote={handleVote} />}
             </>
           ) : null}
         </div>
