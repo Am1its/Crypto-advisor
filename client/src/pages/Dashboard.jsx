@@ -29,6 +29,36 @@ function initials(user) {
   return user.email?.[0]?.toUpperCase() || '?';
 }
 
+function Sparkline({ prices, change24h, coinId }) {
+  if (!prices?.length) return null;
+  const W = 80, H = 28, PAD = 1;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const toX = (i) => PAD + (i / (prices.length - 1)) * (W - PAD * 2);
+  const toY = (p) => PAD + (1 - (p - min) / range) * (H - PAD * 2);
+  const linePoints = prices.map((p, i) => `${toX(i)},${toY(p)}`).join(' ');
+  const areaPath =
+    `M ${toX(0)},${H} ` +
+    prices.map((p, i) => `L ${toX(i)},${toY(p)}`).join(' ') +
+    ` L ${toX(prices.length - 1)},${H} Z`;
+  const color = (change24h ?? 0) >= 0 ? '#22c55e' : '#ef4444';
+  const gradId = `sg-${coinId}`;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      <polyline fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" points={linePoints} />
+    </svg>
+  );
+}
+
 // ── Shared components ──────────────────────────────────────────────────────
 
 function Spinner() {
@@ -109,6 +139,9 @@ function PricesCard({ prices, votes, onVote }) {
                 <p className="text-white font-semibold text-sm leading-tight">{coin.symbol}</p>
                 <p className="text-gray-500 text-xs">{coin.name}</p>
               </div>
+            </div>
+            <div className="hidden sm:flex items-center justify-center flex-1 px-3">
+              <Sparkline prices={coin.sparkline} change24h={coin.change24h} coinId={coin.symbol} />
             </div>
             <div className="text-right">
               <p className="text-white font-bold text-sm">{fmt(coin.price)}</p>

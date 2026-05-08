@@ -46,18 +46,25 @@ async function fetchPrices(symbols) {
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
       : {};
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h`,
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h&sparkline=true`,
       { headers }
     );
     if (!res.ok) throw new Error(`CoinGecko markets ${res.status}`);
     const data = await res.json();
-    const result = data.map((coin) => ({
-      symbol: coin.symbol.toUpperCase(),
-      name: coin.name,
-      price: coin.current_price,
-      change24h: coin.price_change_percentage_24h,
-      image: coin.image || COIN_IMAGES[coin.id] || null,
-    }));
+    const result = data.map((coin) => {
+      const raw = coin.sparkline_in_7d?.price || [];
+      // Downsample 168 hourly points → ~42 points for a clean sparkline
+      const step = Math.max(1, Math.floor(raw.length / 42));
+      const sparkline = raw.filter((_, i) => i % step === 0);
+      return {
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        price: coin.current_price,
+        change24h: coin.price_change_percentage_24h,
+        image: coin.image || COIN_IMAGES[coin.id] || null,
+        sparkline: sparkline.length ? sparkline : null,
+      };
+    });
     _priceCache = result;
     _priceCacheKey = cacheKey;
     _priceCachedAt = Date.now();
