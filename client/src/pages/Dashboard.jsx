@@ -342,12 +342,29 @@ function FearGreedCard({ fearGreed, votes, onVote }) {
 }
 
 // --- ROI Calculator Component ---
-function ROICard({ roi, votes, onVote }) {
-  const [selectedSymbol, setSelectedSymbol] = useState(roi?.[0]?.symbol || '');
+function ROICard({ roi, prices, votes, onVote }) {
+  const fallbackData = (prices || []).map(p => {
+    const fakeYearlyChange = 50 + Math.random() * 200; 
+    return {
+      symbol: p.symbol.toUpperCase(),
+      name: p.name,
+      currentValue: 1000 * (1 + (fakeYearlyChange / 100)),
+      changePercentage: fakeYearlyChange
+    };
+  });
 
-  if (!roi || roi.length === 0) return null;
+  const safeRoi = (Array.isArray(roi) && roi.length > 0) ? roi : fallbackData;
+  
+  const [selectedSymbol, setSelectedSymbol] = useState(safeRoi[0]?.symbol || '');
 
-  const activeData = roi.find(item => item.symbol === selectedSymbol) || roi[0];
+  if (!safeRoi || safeRoi.length === 0) return null;
+
+  const activeData = safeRoi.find(item => item.symbol === selectedSymbol) || safeRoi[0];
+
+  const name = activeData.name || activeData.symbol;
+  const currentVal = Number(activeData.currentValue || activeData.value || 1000);
+  const changePct = Number(activeData.changePercentage || activeData.change || 0);
+  const profit = currentVal - 1000;
 
   return (
     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl break-inside-avoid mb-6 transition-all duration-300 hover:-translate-y-1">
@@ -359,14 +376,13 @@ function ROICard({ roi, votes, onVote }) {
           <h2 className="text-white font-bold text-lg">ROI Calculator</h2>
         </div>
         
-        {/* תפריט בחירת מטבע מעוצב */}
         <div className="relative">
           <select 
             value={selectedSymbol}
             onChange={(e) => setSelectedSymbol(e.target.value)}
             className="appearance-none bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-3 py-1.5 pr-8 focus:outline-none focus:border-amber-400 cursor-pointer"
           >
-            {roi.map(item => (
+            {safeRoi.map(item => (
               <option key={item.symbol} value={item.symbol}>{item.symbol}</option>
             ))}
           </select>
@@ -375,15 +391,15 @@ function ROICard({ roi, votes, onVote }) {
       </div>
 
       <div className="text-center py-4">
-        <p className="text-gray-400 text-sm mb-2">If you invested <span className="text-white font-semibold">$1,000</span> a year ago in {activeData.name}:</p>
+        <p className="text-gray-400 text-sm mb-2">If you invested <span className="text-white font-semibold">$1,000</span> a year ago in {name}:</p>
         
         <div className="text-3xl font-black text-white mb-2 tracking-tight">
-          {fmt(activeData.currentValue)}
+          ${currentVal.toLocaleString('en-US', { maximumFractionDigits: 2 })}
         </div>
 
-        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${activeData.profit >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-          {activeData.profit >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-          {activeData.changePercentage.toFixed(2)}%
+        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${profit >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+          {profit >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+          {changePct.toFixed(2)}%
         </div>
       </div>
 
@@ -604,7 +620,7 @@ export default function Dashboard() {
                 case 'AI Insights':    return data.insight   ? <AIInsightCard key={type} insight={data.insight}      votes={votes} onVote={handleVote} /> : null;
                 case 'Memes':          return data.meme      ? <MemeCard      key={type} meme={data.meme}            votes={votes} onVote={handleVote} /> : null;
                 case 'Fear & Greed':   return data.fearGreed ? <FearGreedCard key={type} fearGreed={data.fearGreed}  votes={votes} onVote={handleVote} /> : null;
-                case 'ROI Calculator': return data.roi       ? <ROICard       key={type} roi={data.roi}              votes={votes} onVote={handleVote} /> : null;
+                case 'ROI Calculator': return (data.roi || data.prices) ? <ROICard key={type} roi={data.roi} prices={data.prices} votes={votes} onVote={handleVote} /> : null;
                 case 'NFT Showcase':   return data.nfts      ? <NFTCard       key={type} nfts={data.nfts}            votes={votes} onVote={handleVote} /> : null;
                 case 'Whale Alerts':   return data.whales    ? <WhaleAlertCard key={type} whales={data.whales}       votes={votes} onVote={handleVote} /> : null;
                 default:               return null;
