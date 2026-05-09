@@ -341,49 +341,70 @@ function FearGreedCard({ fearGreed, votes, onVote }) {
   );
 }
 
+// --- ROI Calculator Component ---
 function ROICard({ roi, votes, onVote }) {
+  const [selectedSymbol, setSelectedSymbol] = useState(roi?.[0]?.symbol || '');
+
+  if (!roi || roi.length === 0) return null;
+
+  const activeData = roi.find(item => item.symbol === selectedSymbol) || roi[0];
+
   return (
-    <Card accent="bg-emerald-500" icon={DollarSign} iconColor="text-emerald-400" title="$1,000 ROI · 1 Year">
-      <p className="text-gray-500 text-xs -mt-1">What $1,000 invested exactly one year ago is worth today</p>
-      <div>
-        {roi.map((coin, i) => (
-          <div key={coin.symbol}
-            className={`flex items-center justify-between py-2.5 ${i < roi.length - 1 ? 'border-b border-gray-800/60' : ''}`}>
-            <div className="flex items-center gap-2.5">
-              {coin.image
-                ? <img src={coin.image} alt={coin.symbol} className="w-7 h-7 rounded-full" />
-                : <div className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">{coin.symbol[0]}</div>
-              }
-              <div>
-                <p className="text-white text-sm font-semibold">{coin.symbol}</p>
-                {coin.pastPrice != null && (
-                  <p className="text-gray-600 text-xs">
-                    {fmt(coin.pastPrice)} → {fmt(coin.currentPrice)}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              {coin.currentValue != null ? (
-                <>
-                  <p className={`text-sm font-bold ${coin.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${coin.currentValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                  </p>
-                  <span className={`text-xs ${coin.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(1)}%
-                  </span>
-                </>
-              ) : (
-                <p className="text-gray-600 text-xs">Unavailable</p>
-              )}
-            </div>
+    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl break-inside-avoid mb-6 transition-all duration-300 hover:-translate-y-1">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <div className="bg-green-500/20 p-2 rounded-lg">
+            <DollarSign className="text-green-400" size={20} />
           </div>
-        ))}
+          <h2 className="text-white font-bold text-lg">ROI Calculator</h2>
+        </div>
+        
+        {/* תפריט בחירת מטבע מעוצב */}
+        <div className="relative">
+          <select 
+            value={selectedSymbol}
+            onChange={(e) => setSelectedSymbol(e.target.value)}
+            className="appearance-none bg-gray-800 border border-gray-700 text-white text-xs rounded-lg px-3 py-1.5 pr-8 focus:outline-none focus:border-amber-400 cursor-pointer"
+          >
+            {roi.map(item => (
+              <option key={item.symbol} value={item.symbol}>{item.symbol}</option>
+            ))}
+          </select>
+          <ChevronsUpDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+        </div>
       </div>
-      <div className="pt-1 border-t border-gray-800/60">
-        <VoteButtons section="roi" itemId="roi-1y" votes={votes} onVote={onVote} />
+
+      <div className="text-center py-4">
+        <p className="text-gray-400 text-sm mb-2">If you invested <span className="text-white font-semibold">$1,000</span> a year ago in {activeData.name}:</p>
+        
+        <div className="text-3xl font-black text-white mb-2 tracking-tight">
+          {fmt(activeData.currentValue)}
+        </div>
+
+        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${activeData.profit >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+          {activeData.profit >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+          {activeData.changePercentage.toFixed(2)}%
+        </div>
       </div>
-    </Card>
+
+      <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
+        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Is this ROI Insight helpful?</span>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => onVote('ROI Calculator', activeData.symbol, 'up')}
+            className={`p-2 rounded-full transition-all active:scale-90 ${votes['ROI Calculator']?.[activeData.symbol] === 'up' ? 'bg-green-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+          >
+            <ThumbsUp size={14} />
+          </button>
+          <button 
+            onClick={() => onVote('ROI Calculator', activeData.symbol, 'down')}
+            className={`p-2 rounded-full transition-all active:scale-90 ${votes['ROI Calculator']?.[activeData.symbol] === 'down' ? 'bg-red-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+          >
+            <ThumbsDown size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
