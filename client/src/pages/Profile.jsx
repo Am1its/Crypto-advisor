@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp, Lock, GripVertical, X } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import toast from 'react-hot-toast';
 import client from '../api/client';
 
@@ -77,6 +78,17 @@ export default function Profile() {
 
   const toggle = (setter, current, value) =>
     setter(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
+
+  const onContentDragEnd = (result) => {
+    if (!result.destination) return;
+    const items = Array.from(contentTypes);
+    const [moved] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, moved);
+    setContentTypes(items);
+  };
+
+  const addContentType = (type) => setContentTypes(prev => [...prev, type]);
+  const removeContentType = (type) => setContentTypes(prev => prev.filter(t => t !== type));
 
   const handleSave = async () => {
     setSaving(true); setError(''); setSaved(false);
@@ -280,14 +292,75 @@ export default function Profile() {
             </Section>
 
             <Section title="Content Preferences">
-              <p className="text-gray-500 text-xs -mt-2">What you'd like to see on your dashboard</p>
-              <div className="flex flex-wrap gap-2">
-                {CONTENT_TYPES.map(type => (
-                  <Chip key={type} label={type}
-                    selected={contentTypes.includes(type)}
-                    onClick={() => toggle(setContentTypes, contentTypes, type)} />
-                ))}
-              </div>
+              <p className="text-gray-500 text-xs -mt-2">
+                Drag selected widgets to set the order they appear on your dashboard
+              </p>
+
+              {/* Ordered selected types — drag to reorder */}
+              {contentTypes.length > 0 && (
+                <DragDropContext onDragEnd={onContentDragEnd}>
+                  <Droppable droppableId="content-types">
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="flex flex-col gap-2"
+                      >
+                        {contentTypes.map((type, index) => (
+                          <Draggable key={type} draggableId={type} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl bg-amber-400/10 border text-sm font-medium transition-all ${
+                                  snapshot.isDragging
+                                    ? 'border-amber-400/60 shadow-lg shadow-amber-400/10 bg-amber-400/15'
+                                    : 'border-amber-400/30'
+                                }`}
+                              >
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="text-amber-400/40 hover:text-amber-400/80 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                >
+                                  <GripVertical size={14} />
+                                </div>
+                                <span className="flex-1 text-amber-400">{type}</span>
+                                <span className="text-amber-400/40 text-xs tabular-nums">#{index + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeContentType(type)}
+                                  className="text-amber-400/40 hover:text-red-400 transition-colors flex-shrink-0 ml-1"
+                                >
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              )}
+
+              {contentTypes.length === 0 && (
+                <p className="text-gray-600 text-xs italic">
+                  No widgets selected — all will be shown in default order.
+                </p>
+              )}
+
+              {/* Unselected types — click to add */}
+              {CONTENT_TYPES.filter(t => !contentTypes.includes(t)).length > 0 && (
+                <div className="flex flex-col gap-2 pt-1 border-t border-gray-800">
+                  <p className="text-gray-600 text-xs">Click to add:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENT_TYPES.filter(t => !contentTypes.includes(t)).map(type => (
+                      <Chip key={type} label={type} selected={false} onClick={() => addContentType(type)} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </Section>
 
           </div>

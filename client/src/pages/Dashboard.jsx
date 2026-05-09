@@ -572,21 +572,25 @@ export default function Dashboard() {
               <SkeletonCard rows={4} />
             </>
           ) : data ? (() => {
-            // Empty array = no restrictions (legacy users / fresh onboarding)
             const ct = data.contentTypes || [];
-            const wants = (n) => ct.length === 0 || ct.includes(n);
-            return (
-              <>
-                {wants('Charts')          && data.prices   && <PricesCard    prices={data.prices}    votes={votes} onVote={handleVote} />}
-                {wants('Market News')     && data.news     && <NewsCard      news={data.news}         votes={votes} onVote={handleVote} />}
-                {wants('AI Insights')     && data.insight  && <AIInsightCard insight={data.insight}   votes={votes} onVote={handleVote} />}
-                {wants('Memes')           && data.meme     && <MemeCard      meme={data.meme}         votes={votes} onVote={handleVote} />}
-                {wants('Fear & Greed')    && data.fearGreed && <FearGreedCard  fearGreed={data.fearGreed} votes={votes} onVote={handleVote} />}
-                {wants('ROI Calculator')  && data.roi      && <ROICard        roi={data.roi}              votes={votes} onVote={handleVote} />}
-                {wants('NFT Showcase')    && data.nfts     && <NFTCard        nfts={data.nfts}            votes={votes} onVote={handleVote} />}
-                {wants('Whale Alerts')    && data.whales   && <WhaleAlertCard whales={data.whales}        votes={votes} onVote={handleVote} />}
-              </>
-            );
+            const ALL_TYPES = ['Charts', 'Market News', 'AI Insights', 'Memes', 'Fear & Greed', 'ROI Calculator', 'NFT Showcase', 'Whale Alerts'];
+            const order = ct.length > 0 ? ct : ALL_TYPES;
+
+            const renderWidget = (type) => {
+              switch (type) {
+                case 'Charts':         return data.prices    ? <PricesCard    key={type} prices={data.prices}        votes={votes} onVote={handleVote} /> : null;
+                case 'Market News':    return data.news      ? <NewsCard      key={type} news={data.news}            votes={votes} onVote={handleVote} /> : null;
+                case 'AI Insights':    return data.insight   ? <AIInsightCard key={type} insight={data.insight}      votes={votes} onVote={handleVote} /> : null;
+                case 'Memes':          return data.meme      ? <MemeCard      key={type} meme={data.meme}            votes={votes} onVote={handleVote} /> : null;
+                case 'Fear & Greed':   return data.fearGreed ? <FearGreedCard key={type} fearGreed={data.fearGreed}  votes={votes} onVote={handleVote} /> : null;
+                case 'ROI Calculator': return data.roi       ? <ROICard       key={type} roi={data.roi}              votes={votes} onVote={handleVote} /> : null;
+                case 'NFT Showcase':   return data.nfts      ? <NFTCard       key={type} nfts={data.nfts}            votes={votes} onVote={handleVote} /> : null;
+                case 'Whale Alerts':   return data.whales    ? <WhaleAlertCard key={type} whales={data.whales}       votes={votes} onVote={handleVote} /> : null;
+                default:               return null;
+              }
+            };
+
+            return order.map(renderWidget);
           })() : null}
         </div>
       </main>
