@@ -7,7 +7,7 @@ This document summarizes how Claude Code and Gemini was used during the developm
 ## Tool Used
 
 **Claude Code** (claude-sonnet-4-6) — Anthropic's AI-powered CLI assistant, used interactively throughout the entire development process.
-* **Google Gemini** — Google's advanced AI assistant, used for targeted UI/UX refinements, logical debugging, and manual collaborative coding. 
+**Google Gemini** — Google's advanced AI assistant, used for targeted UI/UX refinements, logical debugging, and manual collaborative coding. 
 
 ---
 
@@ -296,6 +296,20 @@ This document summarizes how Claude Code and Gemini was used during the developm
 **My decisions:**
 - Implemented the custom interactive component instead of relying entirely on Claude's auto-generated static list, improving the overall UX.
 - Updated the documentation to reflect this multi-AI development workflow.
+
+### Session 4 — Backend Resilience & API Rate Limit Fixes (2026-05-10)
+
+**What I asked:**
+- Fix the issue where the dashboard occasionally displays a blank screen or missing prices ("–") due to CoinGecko's aggressive rate limiting (returning 429 errors on both primary and fallback endpoints).
+
+**Claude's / Gemini's contribution:**
+- Diagnosed the root cause of the API failures and applied three critical backend fixes in `server/routes/dashboard.js`:
+  1. **Stale Cache Fallback:** Modified the error handling logic to return the `_priceCache` (even if expired) when all CoinGecko API calls fail. This ensures users always see the last known prices instead of broken UI components.
+  2. **Authenticated Fallback:** Added the `x-cg-demo-api-key` header to the `/simple/price` fallback request, which was previously unauthenticated and hitting stricter anonymous rate limits.
+  3. **Optimized TTL:** Increased the `PRICE_CACHE_TTL` from 90 seconds to 5 minutes to significantly reduce request frequency and conserve the rate limit budget.
+
+**My decisions:**
+- Prioritized "Graceful Degradation" and UI stability over real-time data freshness, ensuring a flawless presentation for the interview demonstration.
 
 ## Bonus: Feedback Loop & Model Training Suggestion
 

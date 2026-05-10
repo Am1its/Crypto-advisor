@@ -255,6 +255,7 @@ Render env vars needed: `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`, `COINGECKO_A
 - **Fallback AI insight always returned the same text** → expanded to 3 rotating tips per investor type
 - **Basic loading spinner gave no content shape preview** → replaced with 4 shape-accurate skeleton loaders (Prices, News, AI Insight, Meme) using `animate-pulse`; rendered inline in the same 2×2 grid so layout doesn't shift on load
 - **No user feedback on profile saves or password changes** → added `react-hot-toast` with dark amber theme; success/error toasts fire on profile save, password update, and signup
+- **CoinGecko rate limiting on Render's shared IPs** → Implemented a robust 5-minute in-memory cache, added the `x-cg-demo-api-key` header to the `/simple/price` fallback endpoint, and engineered a "stale cache fallback" mechanism. This ensures that even if both endpoints return 429 errors, the UI gracefully degrades by displaying the last known prices rather than crashing or showing null values.
 
 ### Unresolved ⚠️
 - **Avatar emoji not persisted to DB** — stored only in localStorage; switching devices or re-logging in loses the selection
