@@ -29,7 +29,7 @@ const COIN_IMAGES = {
 let _priceCache = null;
 let _priceCacheKey = '';
 let _priceCachedAt = 0;
-const PRICE_CACHE_TTL = 90_000;
+const PRICE_CACHE_TTL = 5 * 60_000; // 5 min — reduces CoinGecko rate-limit hits
 
 let _fearGreedCache = null;
 let _fearGreedCachedAt = 0;
@@ -86,8 +86,12 @@ async function fetchPrices(symbols) {
 
   // Fallback: /simple/price — more lenient rate limits, no images
   try {
+    const fallbackHeaders = process.env.COINGECKO_API_KEY
+      ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
+      : {};
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`,
+      { headers: fallbackHeaders }
     );
     if (!res.ok) throw new Error(`CoinGecko simple/price ${res.status}`);
     const data = await res.json();
@@ -111,7 +115,13 @@ async function fetchPrices(symbols) {
     console.error('[CoinGecko] /simple/price also failed:', err.message);
   }
 
-  // Last resort: return nulls but with correct names and hardcoded images
+  // Both APIs failed — serve stale cache rather than null prices
+  if (_priceCache && _priceCacheKey === cacheKey) {
+    console.warn('[CoinGecko] Both APIs failed — serving stale cache');
+    return _priceCache;
+  }
+
+  // No cache at all: return structure with null prices so the card still renders
   return symbols.map((s) => {
     const sym = s?.toUpperCase() || s;
     return { symbol: sym, name: COIN_NAME_MAP[sym] || sym, price: null, change24h: null, image: COIN_IMAGES[COIN_ID_MAP[sym]] || null };
