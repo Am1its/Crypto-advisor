@@ -152,6 +152,7 @@ const SORT_OPTIONS = [
 
 function PricesCard({ prices, votes, onVote }) {
   const [sortBy, setSortBy] = useState('default');
+  const isStale = prices.some((c) => c._stale);
 
   const sorted = [...prices].sort((a, b) => {
     if (sortBy === 'price-desc') return (b.price ?? -Infinity) - (a.price ?? -Infinity);
@@ -175,6 +176,11 @@ function PricesCard({ prices, votes, onVote }) {
 
   return (
     <Card accent="bg-amber-400" icon={BarChart2} iconColor="text-amber-400" title="Coin Prices" action={sortAction}>
+      {isStale && (
+        <p className="text-xs text-amber-500/70 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+          Live prices unavailable — showing approximate values. Refresh to retry.
+        </p>
+      )}
       <div className="max-h-[340px] overflow-y-auto scrollbar-hide">
         {sorted.map((coin, i) => (
           <div key={coin.symbol}
@@ -507,11 +513,15 @@ export default function Dashboard() {
   const [error, setError]           = useState('');
   const [votes, setVotes]           = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [loadSlow, setLoadSlow]     = useState(false);
 
   const loadDashboard = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError('');
+    setLoadSlow(false);
+
+    const slowTimer = setTimeout(() => setLoadSlow(true), 8000);
     try {
       const { data: res } = await client.get('/dashboard');
       setData(res);
@@ -522,7 +532,9 @@ export default function Dashboard() {
         setError('Failed to load dashboard. Please try again.');
       }
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setLoadSlow(false);
       setRefreshing(false);
     }
   }, [navigate]);
@@ -595,6 +607,13 @@ export default function Dashboard() {
           <div className="mb-5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex justify-between items-center">
             {error}
             <button onClick={() => loadDashboard()} className="underline text-xs">Retry</button>
+          </div>
+        )}
+
+        {loadSlow && (
+          <div className="mb-5 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-400 text-sm flex items-center gap-3">
+            <RefreshCw size={14} className="animate-spin flex-shrink-0" />
+            <span>Fetching live market data — this can take a few seconds when the API is busy&hellip;</span>
           </div>
         )}
 

@@ -311,6 +311,19 @@ This document summarizes how Claude Code and Gemini was used during the developm
 **My decisions:**
 - Prioritized "Graceful Degradation" and UI stability over real-time data freshness, ensuring a flawless presentation for the interview demonstration.
 
+### Session 5 — Network Resilience & UX Fallbacks (2026-05-10)
+
+**What I asked:**
+- Diagnose and fix extreme dashboard loading delays (sometimes taking 20+ minutes or hanging indefinitely) caused by CoinGecko API rate limits.
+- Ensure the UI gracefully handles these massive delays without leaving the user staring at a silent loading screen.
+
+**AI's contribution & My decisions:**
+- Diagnosed the root cause: Node.js native `fetch` lacks a built-in timeout. A single stalled CoinGecko request would hang the entire Promise pool.
+- **Backend Fix 1:** Implemented a `fetchWithTimeout()` helper using `AbortController` (8-second timeout) across all 7 external API calls.
+- **Backend Fix 2:** Introduced a `STATIC_PRICE_FALLBACK` for absolute "cold start" scenarios where the API is unreachable, ensuring the dashboard always renders.
+- **Frontend Fix 1:** Added a dynamic "Slow connection" banner that appears if the dashboard takes longer than 8 seconds to load, vastly improving UX.
+- **Frontend Fix 2:** Added an "Approximate values" badge to the Prices card when rendering static fallback data to maintain data integrity and transparency.
+
 ## Bonus: Feedback Loop & Model Training Suggestion
 
 ### How Votes Can Power Future Model Improvements

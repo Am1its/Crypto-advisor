@@ -26,6 +26,26 @@ const COIN_IMAGES = {
   'avalanche-2':'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
 };
 
+// Wraps fetch with an AbortController timeout so no call ever hangs indefinitely
+function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+// Approximate static prices used only when CoinGecko is completely unreachable
+const STATIC_PRICE_FALLBACK = {
+  bitcoin:      { price: 95000,  change24h: 0 },
+  ethereum:     { price: 1800,   change24h: 0 },
+  solana:       { price: 145,    change24h: 0 },
+  binancecoin:  { price: 580,    change24h: 0 },
+  ripple:       { price: 0.52,   change24h: 0 },
+  cardano:      { price: 0.38,   change24h: 0 },
+  dogecoin:     { price: 0.15,   change24h: 0 },
+  'avalanche-2':{ price: 20,     change24h: 0 },
+};
+
 let _priceCache = null;
 let _priceCacheKey = '';
 let _priceCachedAt = 0;
@@ -56,7 +76,7 @@ async function fetchPrices(symbols) {
     const headers = process.env.COINGECKO_API_KEY
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
       : {};
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(',')}&price_change_percentage=24h&sparkline=true`,
       { headers }
     );
@@ -89,7 +109,7 @@ async function fetchPrices(symbols) {
     const fallbackHeaders = process.env.COINGECKO_API_KEY
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
       : {};
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`,
       { headers: fallbackHeaders }
     );
@@ -121,10 +141,19 @@ async function fetchPrices(symbols) {
     return _priceCache;
   }
 
-  // No cache at all: return structure with null prices so the card still renders
-  return symbols.map((s) => {
-    const sym = s?.toUpperCase() || s;
-    return { symbol: sym, name: COIN_NAME_MAP[sym] || sym, price: null, change24h: null, image: COIN_IMAGES[COIN_ID_MAP[sym]] || null };
+  // No cache at all — use static fallback so prices are never blank on first load
+  console.warn('[CoinGecko] No cache available — using static price fallback');
+  return ids.map((id) => {
+    const sym = Object.keys(COIN_ID_MAP).find((k) => COIN_ID_MAP[k] === id) || id.toUpperCase();
+    const fb = STATIC_PRICE_FALLBACK[id] || {};
+    return {
+      symbol: sym,
+      name: COIN_NAME_MAP[sym] || sym,
+      price: fb.price ?? null,
+      change24h: fb.change24h ?? null,
+      image: COIN_IMAGES[id] || null,
+      _stale: true,
+    };
   });
 }
 
@@ -142,7 +171,7 @@ function generateMockNews(symbols) {
 
 async function fetchNews(symbols) {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       'https://www.reddit.com/r/CryptoCurrency/top.json?limit=20&t=day',
       { headers: { 'User-Agent': 'CryptoAdvisor/1.0' } }
     );
@@ -204,7 +233,7 @@ function getFallbackInsight(investorType, assets) {
 async function fetchAIInsight(investorType, assets, apiKey) {
   if (!apiKey) return getFallbackInsight(investorType, assets);
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -238,7 +267,7 @@ async function fetchAIInsight(investorType, assets, apiKey) {
 async function fetchFearGreed() {
   if (_fearGreedCache && Date.now() - _fearGreedCachedAt < FEAR_GREED_TTL) return _fearGreedCache;
   try {
-    const res = await fetch('https://api.alternative.me/fng/?limit=1');
+    const res = await fetchWithTimeout('https://api.alternative.me/fng/?limit=1');
     if (!res.ok) throw new Error(`FNG ${res.status}`);
     const data = await res.json();
     const entry = data.data[0];
@@ -267,7 +296,7 @@ async function fetchHistoricalPrice(coinId) {
   try {
     const headers = process.env.COINGECKO_API_KEY
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY } : {};
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${dateStr}&localization=false`,
       { headers }
     );
@@ -323,7 +352,7 @@ async function fetchNFTs() {
   try {
     const headers = process.env.COINGECKO_API_KEY
       ? { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY } : {};
-    const res = await fetch('https://api.coingecko.com/api/v3/search/trending', { headers });
+    const res = await fetchWithTimeout('https://api.coingecko.com/api/v3/search/trending', { headers });
     if (res.status === 429) throw new Error('Rate limited');
     if (!res.ok) throw new Error(`CoinGecko trending ${res.status}`);
     const data = await res.json();
