@@ -324,6 +324,55 @@ This document summarizes how Claude Code and Gemini was used during the developm
 - **Frontend Fix 1:** Added a dynamic "Slow connection" banner that appears if the dashboard takes longer than 8 seconds to load, vastly improving UX.
 - **Frontend Fix 2:** Added an "Approximate values" badge to the Prices card when rendering static fallback data to maintain data integrity and transparency.
 
+### Session 6 — Premium Dashboard OS Overhaul (2026-05-11)
+
+**What I asked:**
+- Replace the masonry layout with a fixed "one-screen" layout (no page scroll) using a 12-column CSS Grid
+- Implement an animated mesh gradient background with drifting glow blobs
+- Apply glassmorphism to all cards (backdrop-blur, semi-transparent dark glass, colored border + glow per widget)
+- Load Inter font globally for premium typography
+- Add per-widget sizing (S/M/L) saved to the DB and consumed by the grid
+- Add an "Edit sizes" mode to Profile with per-widget S/M/L toggle buttons
+- Redesign skeleton loaders, slow-load indicator, and stale price notice to match the new design system
+
+**Claude's contribution:**
+
+**Backend (3 files):**
+- `server/db/init.js` — added `ALTER TABLE preferences ADD COLUMN IF NOT EXISTS widget_sizes JSONB DEFAULT '{}'::jsonb` (non-destructive, safe to re-run)
+- `server/routes/profile.js` — `GET` now selects `widget_sizes`; `PUT` accepts and persists it
+- `server/routes/dashboard.js` — selects `widget_sizes` from preferences and returns it as `widgetSizes` in the response payload
+
+**Frontend — Dashboard.jsx (complete rewrite):**
+- `MeshBackground` component: fixed-position, 3 CSS `@keyframes` blob divs (violet/amber/sky) animating on 18–30s loops with `blur-[130px]`; subtle grid dot overlay at 1.8% opacity
+- `WIDGET_META` constant: maps each of the 8 widget types to an accent hex color, glow rgba, icon, and label — single source of truth for the entire visual system
+- `GlassCard` component replaces the old `Card`: inline styles for `rgba(6,6,16,0.76)` background, `backdrop-blur(28px)`, colored `border` and `box-shadow` glow; 2px gradient accent bar; internal `overflow-y-auto` scrollable body
+- `GlassSkeleton` component: 8 glass-style pulse skeletons matching default widget positions (6+6 / 3+3+3+3 / 6+6)
+- Grid: `h-dvh overflow-hidden flex flex-col` root; `grid-template-rows: repeat(3, 1fr)` + `grid-auto-flow: dense` gives a pixel-perfect no-scroll layout
+- `getColSpan()` maps S→3, M→6, L→12 columns, falling back to per-widget defaults
+- Slow-load indicator moved inline to the header as a compact spinner (no layout-disrupting banner)
+- `APPROX` badge in the Prices card header (replaces the old disruptive amber banner)
+- All 8 widget components updated: use `GlassCard`, receive `widgetSizes`, pass `colSpan` down; colors/borders match the glass system
+
+**Frontend — Profile.jsx:**
+- `widgetSizes` state loaded from `GET /api/profile` and sent on save
+- "Edit sizes" toggle button in the Dashboard Layout section header
+- When active: each draggable widget row reveals S/M/L buttons styled with the widget's own accent color; active size highlighted, inactive dimmed
+- `DEFAULT_SIZE` and `WIDGET_ACCENT` constants keep sizing logic and colors co-located
+- Hint text warns users that oversized widgets may push others off-screen
+
+**`client/index.html`:**
+- Added Google Fonts `<link>` for Inter (weights 400–900)
+- Added `<style>` block: `* { font-family: 'Inter', system-ui, sans-serif }`, `body { background: #04040a }`, global scrollbar hide
+
+**Build result:** `✓ 1809 modules transformed`, 442 kB JS / 40 kB CSS, no errors
+
+**My decisions:**
+- Chose `grid-template-rows: repeat(3, 1fr)` with `overflow-hidden` as the simplest one-screen approach — widgets that overflow are clipped (documented as a known limitation)
+- Kept row span always at 1 (height = 1/3 viewport); users control only column width via S/M/L — avoids complex row-span collision logic
+- Kept `@hello-pangea/dnd` for ordering; size toggles are separate buttons, not draggable resize handles
+
+---
+
 ## Bonus: Feedback Loop & Model Training Suggestion
 
 ### How Votes Can Power Future Model Improvements

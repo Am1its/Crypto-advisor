@@ -434,7 +434,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
   try {
     const prefResult = await pool.query(
-      'SELECT crypto_assets, investor_type, content_types FROM preferences WHERE user_id = $1',
+      'SELECT crypto_assets, investor_type, content_types, widget_sizes FROM preferences WHERE user_id = $1',
       [userId]
     );
 
@@ -442,7 +442,7 @@ router.get('/', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'no_preferences', message: 'Please complete onboarding first.' });
     }
 
-    const { crypto_assets, investor_type, content_types } = prefResult.rows[0];
+    const { crypto_assets, investor_type, content_types, widget_sizes } = prefResult.rows[0];
     const assets = crypto_assets || ['BTC', 'ETH'];
     const wants = (name) => !content_types?.length || content_types.includes(name);
 
@@ -459,7 +459,7 @@ router.get('/', authMiddleware, async (req, res) => {
       wants('Whale Alerts')    ? generateWhaleAlerts(assets, prices) : null,
     ]);
 
-    res.json({ prices, news, insight, meme, fearGreed, roi, nfts, whales, contentTypes: content_types || [] });
+    res.json({ prices, news, insight, meme, fearGreed, roi, nfts, whales, contentTypes: content_types || [], widgetSizes: widget_sizes || {} });
   } catch (err) {
     console.error('Dashboard error:', err.message);
     res.status(500).json({ error: 'Server error' });

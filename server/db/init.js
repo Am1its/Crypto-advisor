@@ -34,6 +34,12 @@ const createTables = async () => {
       );
     `);
 
+    // Non-destructive migration: add widget_sizes if it doesn't exist yet
+    await client.query(`
+      ALTER TABLE preferences
+        ADD COLUMN IF NOT EXISTS widget_sizes JSONB DEFAULT '{}'::jsonb;
+    `);
+
     console.log('✓ Tables created (users, preferences, votes)');
   } finally {
     client.release();
