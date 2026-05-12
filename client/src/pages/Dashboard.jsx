@@ -1,13 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  TrendingUp, TrendingDown, LogOut, RefreshCw,
+  TrendingUp, TrendingDown, LogOut, RefreshCw, Sun, Moon,
   ThumbsUp, ThumbsDown, Newspaper, Sparkles, ImageIcon,
   BarChart2, ExternalLink, ChevronsUpDown,
   Activity, Layers, Zap, DollarSign, Bell, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import client from '../api/client';
+
+const ThemeCtx = createContext(false);
+const useTheme = () => useContext(ThemeCtx);
 import MeshBackground from '../components/MeshBackground';
 
 // ── Widget theming ─────────────────────────────────────────────────────────
@@ -91,6 +94,7 @@ function Sparkline({ prices, change24h, coinId }) {
 // ── VoteButtons ─────────────────────────────────────────────────────────────
 
 function VoteButtons({ section, itemId, votes, onVote }) {
+  const isLight = useTheme();
   const key = `${section}:${itemId}`;
   const current = votes[key];
   const [popping, setPopping] = useState(null);
@@ -105,8 +109,8 @@ function VoteButtons({ section, itemId, votes, onVote }) {
   return (
     <div className="flex gap-1.5">
       {[
-        { vote: 'up',   Icon: ThumbsUp,   label: 'Helpful',     active: 'bg-green-500/20 border-green-500/40 text-green-400' },
-        { vote: 'down', Icon: ThumbsDown, label: 'Not helpful', active: 'bg-red-500/20 border-red-500/40 text-red-400' },
+        { vote: 'up',   Icon: ThumbsUp,   label: 'Helpful',     active: 'bg-green-500/20 border-green-500/40 text-green-600' },
+        { vote: 'down', Icon: ThumbsDown, label: 'Not helpful', active: 'bg-red-500/20 border-red-500/40 text-red-500' },
       ].map(({ vote, Icon, label, active }) => (
         <button
           key={vote}
@@ -117,7 +121,9 @@ function VoteButtons({ section, itemId, votes, onVote }) {
             popping === vote ? 'scale-95' : '',
             current === vote
               ? active
-              : 'border-white/10 text-white/30 hover:border-white/20 hover:text-white/50 disabled:opacity-30 disabled:cursor-not-allowed',
+              : isLight
+                ? 'border-black/10 text-black/30 hover:border-black/20 hover:text-black/50 disabled:opacity-30 disabled:cursor-not-allowed'
+                : 'border-white/10 text-white/30 hover:border-white/20 hover:text-white/50 disabled:opacity-30 disabled:cursor-not-allowed',
           ].join(' ')}
         >
           <Icon size={10} strokeWidth={2.5} /> {label}
@@ -130,6 +136,7 @@ function VoteButtons({ section, itemId, votes, onVote }) {
 // ── GlassCard (replaces old Card) ──────────────────────────────────────────
 
 function GlassCard({ type, colSpan, action, isStale, children }) {
+  const isLight = useTheme();
   const meta = WIDGET_META[type] || { accent: '#888', glow: 'transparent', Icon: BarChart2, label: type };
   const { accent, glow, Icon, label } = meta;
 
@@ -137,19 +144,19 @@ function GlassCard({ type, colSpan, action, isStale, children }) {
     <div
       style={{
         gridColumn: `span ${colSpan} / span ${colSpan}`,
-        background: 'rgba(6, 6, 16, 0.76)',
+        background: isLight ? 'rgba(255,255,255,0.88)' : 'rgba(6,6,16,0.76)',
         backdropFilter: 'blur(28px)',
         WebkitBackdropFilter: 'blur(28px)',
-        border: `1px solid ${accent}22`,
-        boxShadow: `0 0 50px ${glow}, 0 1px 0 rgba(255,255,255,0.04) inset`,
+        border: `1px solid ${accent}${isLight ? '35' : '22'}`,
+        boxShadow: isLight
+          ? `0 4px 24px rgba(0,0,0,0.07), 0 0 30px ${glow}`
+          : `0 0 50px ${glow}, 0 1px 0 rgba(255,255,255,0.04) inset`,
       }}
       className="rounded-2xl overflow-hidden flex flex-col min-h-0"
     >
-      {/* gradient accent bar */}
       <div style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55)` }} className="h-[2px] flex-shrink-0" />
-
-      {/* header row */}
-      <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0 border-b border-white/[0.05]">
+      <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
+        style={{ borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.05)' }}>
         <div className="flex items-center gap-2">
           <Icon size={13} style={{ color: accent }} />
           <span style={{ color: accent }} className="text-[10px] font-bold uppercase tracking-[0.14em] leading-none">{label}</span>
@@ -161,8 +168,6 @@ function GlassCard({ type, colSpan, action, isStale, children }) {
         </div>
         {action}
       </div>
-
-      {/* scrollable body */}
       <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
         {children}
       </div>
@@ -173,24 +178,25 @@ function GlassCard({ type, colSpan, action, isStale, children }) {
 // ── Glass Skeleton ─────────────────────────────────────────────────────────
 
 function GlassSkeleton({ colSpan = 6 }) {
+  const isLight = useTheme();
   return (
     <div
       style={{
         gridColumn: `span ${colSpan} / span ${colSpan}`,
-        background: 'rgba(6, 6, 16, 0.55)',
+        background: isLight ? 'rgba(255,255,255,0.6)' : 'rgba(6,6,16,0.55)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.04)',
+        border: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.04)',
       }}
       className="rounded-2xl overflow-hidden flex flex-col min-h-0 animate-pulse"
     >
-      <div className="h-[2px] bg-white/[0.08] flex-shrink-0" />
-      <div className="px-4 py-2.5 border-b border-white/[0.05] flex-shrink-0">
-        <div className="h-2.5 w-24 bg-white/[0.08] rounded-full" />
+      <div className="h-[2px] flex-shrink-0" style={{ background: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)' }} />
+      <div className="px-4 py-2.5 flex-shrink-0" style={{ borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="h-2.5 w-24 rounded-full" style={{ background: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)' }} />
       </div>
       <div className="flex-1 p-4 flex flex-col gap-3 min-h-0">
         {[1, 0.8, 1, 0.65, 1, 0.75, 1].map((w, i) => (
-          <div key={i} style={{ width: `${w * 100}%` }} className="h-3 bg-white/[0.06] rounded-full" />
+          <div key={i} style={{ width: `${w * 100}%`, background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)' }} className="h-3 rounded-full" />
         ))}
       </div>
     </div>
@@ -205,6 +211,7 @@ const SYMBOL_TO_CGID = {
 };
 
 function AlertModal({ prices, onClose }) {
+  const isLight = useTheme();
   const [alerts, setAlerts]         = useState([]);
   const [coinSymbol, setCoinSymbol] = useState(prices[0]?.symbol || '');
   const [targetPrice, setTargetPrice] = useState('');
@@ -249,15 +256,21 @@ function AlertModal({ prices, onClose }) {
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(6,6,16,0.97)', border: '1px solid rgba(245,158,11,0.2)', boxShadow: '0 0 60px rgba(245,158,11,0.12), 0 25px 50px rgba(0,0,0,0.5)' }}>
+        style={isLight
+          ? { background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 0 40px rgba(245,158,11,0.1), 0 20px 40px rgba(0,0,0,0.15)' }
+          : { background: 'rgba(6,6,16,0.97)', border: '1px solid rgba(245,158,11,0.2)', boxShadow: '0 0 60px rgba(245,158,11,0.12), 0 25px 50px rgba(0,0,0,0.5)' }}>
         <div style={{ background: 'linear-gradient(90deg, #F59E0B, #F59E0B55)' }} className="h-[2px]" />
 
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.05]">
+        <div className="flex items-center justify-between px-5 py-3.5"
+          style={{ borderBottom: isLight ? '1px solid rgba(0,0,0,0.07)' : '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center gap-2">
             <Bell size={13} style={{ color: '#F59E0B' }} />
             <span style={{ color: '#F59E0B' }} className="text-[10px] font-bold uppercase tracking-[0.14em]">Price Alerts</span>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-0.5">
+          <button onClick={onClose} className="transition-colors p-0.5"
+            style={{ color: isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)' }}
+            onMouseEnter={e => e.currentTarget.style.color = isLight ? '#0f172a' : '#fff'}
+            onMouseLeave={e => e.currentTarget.style.color = isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'}>
             <X size={15} />
           </button>
         </div>
@@ -265,19 +278,22 @@ function AlertModal({ prices, onClose }) {
         <div className="p-5 flex flex-col gap-3.5">
           <div className="flex gap-2.5">
             <select value={coinSymbol} onChange={e => setCoinSymbol(e.target.value)}
-              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none cursor-pointer"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              {prices.map(p => <option key={p.symbol} value={p.symbol} style={{ background: '#0a0a14' }}>{p.symbol}</option>)}
+              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none cursor-pointer"
+              style={isLight
+                ? { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#1e293b' }
+                : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}>
+              {prices.map(p => <option key={p.symbol} value={p.symbol}>{p.symbol}</option>)}
             </select>
-            <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex rounded-xl overflow-hidden"
+              style={{ border: isLight ? '1.5px solid #e2e8f0' : '1px solid rgba(255,255,255,0.1)' }}>
               <button onClick={() => setIsAbove(true)}
                 className="px-3.5 py-2.5 text-sm font-semibold transition-all"
-                style={{ background: isAbove ? 'rgba(34,197,94,0.15)' : 'transparent', color: isAbove ? '#22c55e' : 'rgba(255,255,255,0.35)' }}>
+                style={{ background: isAbove ? 'rgba(34,197,94,0.15)' : 'transparent', color: isAbove ? '#16a34a' : isLight ? '#94a3b8' : 'rgba(255,255,255,0.35)' }}>
                 ↑ Above
               </button>
               <button onClick={() => setIsAbove(false)}
                 className="px-3.5 py-2.5 text-sm font-semibold transition-all"
-                style={{ background: !isAbove ? 'rgba(239,68,68,0.15)' : 'transparent', color: !isAbove ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>
+                style={{ background: !isAbove ? 'rgba(239,68,68,0.15)' : 'transparent', color: !isAbove ? '#dc2626' : isLight ? '#94a3b8' : 'rgba(255,255,255,0.35)' }}>
                 ↓ Below
               </button>
             </div>
@@ -290,8 +306,10 @@ function AlertModal({ prices, onClose }) {
               onChange={e => setTargetPrice(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               placeholder="Target price (USD)"
-              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none"
+              style={isLight
+                ? { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#1e293b' }
+                : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
             />
             <button onClick={handleSubmit} disabled={submitting || !targetPrice}
               className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#030712] disabled:opacity-40 transition-opacity"
@@ -302,21 +320,23 @@ function AlertModal({ prices, onClose }) {
         </div>
 
         {alerts.length > 0 && (
-          <div className="border-t border-white/[0.05] px-5 pb-4">
-            <p className="text-[10px] uppercase tracking-wider mb-2 pt-3" style={{ color: 'rgba(255,255,255,0.25)' }}>Active alerts</p>
+          <div className="px-5 pb-4" style={{ borderTop: isLight ? '1px solid rgba(0,0,0,0.07)' : '1px solid rgba(255,255,255,0.05)' }}>
+            <p className="text-[10px] uppercase tracking-wider mb-2 pt-3"
+              style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.25)' }}>Active alerts</p>
             <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
               {alerts.map(a => (
                 <div key={a.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                    <span className="font-semibold text-white">{a.coin_id.toUpperCase()}</span>
+                  style={{ background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' }}>
+                  <span className="text-xs" style={{ color: isLight ? '#475569' : 'rgba(255,255,255,0.65)' }}>
+                    <span className="font-semibold" style={{ color: isLight ? '#1e293b' : '#fff' }}>{a.coin_id.toUpperCase()}</span>
                     {' '}{a.is_above ? '↑' : '↓'}{' '}
-                    <span className="text-white">${Number(a.target_price).toLocaleString()}</span>
+                    <span style={{ color: isLight ? '#1e293b' : '#fff' }}>${Number(a.target_price).toLocaleString()}</span>
                   </span>
                   <button onClick={() => handleDelete(a.id)}
-                    className="ml-2 transition-colors" style={{ color: 'rgba(255,255,255,0.2)' }}
+                    className="ml-2 transition-colors"
+                    style={{ color: isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)' }}
                     onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}>
+                    onMouseLeave={e => e.currentTarget.style.color = isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)'}>
                     <X size={11} />
                   </button>
                 </div>
@@ -341,6 +361,7 @@ const SORT_OPTIONS = [
 // ── PricesCard ─────────────────────────────────────────────────────────────
 
 function PricesCard({ prices, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   const [sortBy, setSortBy]       = useState('default');
   const [showAlerts, setShowAlerts] = useState(false);
   const isStale = prices.some((c) => c._stale);
@@ -356,18 +377,22 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
     <div className="flex items-center gap-1.5">
       <button onClick={() => setShowAlerts(true)}
         className="flex items-center gap-1 text-[10px] font-medium rounded-lg px-2 py-1 transition-colors"
-        style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}
+        style={isLight
+          ? { color: '#64748b', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.04)' }
+          : { color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}
         onMouseEnter={e => { e.currentTarget.style.color = '#F59E0B'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}>
+        onMouseLeave={e => { e.currentTarget.style.color = isLight ? '#64748b' : 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)'; }}>
         <Bell size={9} /> Alert
       </button>
       <div className="relative flex items-center">
-        <ChevronsUpDown size={10} className="absolute left-2 text-white/30 pointer-events-none" />
+        <ChevronsUpDown size={10} className="absolute left-2 pointer-events-none" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }} />
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none text-white/60"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none"
+          style={isLight
+            ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', color: '#64748b' }
+            : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
         >
           {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -379,27 +404,28 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
     <>
       {showAlerts && <AlertModal prices={prices} onClose={() => setShowAlerts(false)} />}
     <GlassCard type="Charts" colSpan={getColSpan('Charts', widgetSizes)} action={sortAction} isStale={isStale}>
-      <div className="flex flex-col divide-y divide-white/[0.04]">
+      <div className={`flex flex-col divide-y ${isLight ? 'divide-black/[0.06]' : 'divide-white/[0.04]'}`}>
         {sorted.map((coin) => (
           <div key={coin.symbol} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
             <div className="flex items-center gap-2.5">
               {coin.image
                 ? <img src={coin.image} alt={coin.symbol} className="w-7 h-7 rounded-full" />
-                : <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">{coin.symbol[0]}</div>
+                : <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)', color: isLight ? '#64748b' : 'rgba(255,255,255,0.5)' }}>{coin.symbol[0]}</div>
               }
               <div>
-                <p className="text-white font-semibold text-sm leading-tight">{coin.symbol}</p>
-                <p className="text-white/30 text-[11px]">{coin.name}</p>
+                <p className="font-semibold text-sm leading-tight" style={{ color: isLight ? '#1e293b' : '#fff' }}>{coin.symbol}</p>
+                <p className="text-[11px]" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }}>{coin.name}</p>
               </div>
             </div>
             <div className="hidden sm:flex items-center justify-center flex-1 px-4">
               <Sparkline prices={coin.sparkline} change24h={coin.change24h} coinId={coin.symbol} />
             </div>
             <div className="text-right">
-              <p className="text-white font-bold text-sm">{fmt(coin.price)}</p>
+              <p className="font-bold text-sm" style={{ color: isLight ? '#1e293b' : '#fff' }}>{fmt(coin.price)}</p>
               {coin.change24h != null && (
                 <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-full ${
-                  coin.change24h >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                  coin.change24h >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'
                 }`}>
                   {coin.change24h >= 0 ? <TrendingUp size={8} /> : <TrendingDown size={8} />}
                   {Math.abs(coin.change24h).toFixed(2)}%
@@ -409,7 +435,7 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
           </div>
         ))}
       </div>
-      <div className="pt-3 mt-2 border-t border-white/[0.05]">
+      <div className={`pt-3 mt-2 border-t ${isLight ? 'border-black/[0.06]' : 'border-white/[0.05]'}`}>
         <VoteButtons section="prices" itemId="prices-today" votes={votes} onVote={onVote} />
       </div>
     </GlassCard>
@@ -420,18 +446,22 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
 // ── NewsCard ───────────────────────────────────────────────────────────────
 
 function NewsCard({ news, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   return (
     <GlassCard type="Market News" colSpan={getColSpan('Market News', widgetSizes)}>
-      <div className="flex flex-col divide-y divide-white/[0.04]">
+      <div className={`flex flex-col divide-y ${isLight ? 'divide-black/[0.06]' : 'divide-white/[0.04]'}`}>
         {news.map((article, i) => (
           <div key={article.id} className="group py-2.5 first:pt-0 last:pb-0">
             <div className="flex gap-2.5">
-              <span className="text-white/20 font-bold text-xs w-4 flex-shrink-0 mt-0.5 tabular-nums">{i + 1}</span>
+              <span className="font-bold text-xs w-4 flex-shrink-0 mt-0.5 tabular-nums" style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>{i + 1}</span>
               <div className="flex-1 min-w-0">
                 <a href={article.url} target="_blank" rel="noreferrer"
-                  className="text-white/80 text-sm font-medium leading-snug hover:text-white transition-colors flex items-start gap-1">
+                  className="text-sm font-medium leading-snug transition-colors flex items-start gap-1"
+                  style={{ color: isLight ? '#475569' : 'rgba(255,255,255,0.8)' }}
+                  onMouseEnter={e => e.currentTarget.style.color = isLight ? '#0f172a' : '#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color = isLight ? '#475569' : 'rgba(255,255,255,0.8)'}>
                   <span className="line-clamp-2">{article.title}</span>
-                  <ExternalLink size={10} className="flex-shrink-0 mt-0.5 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ExternalLink size={10} className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.2)' }} />
                 </a>
                 <div className="flex items-center justify-between mt-1.5 flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
@@ -439,7 +469,7 @@ function NewsCard({ news, widgetSizes, votes, onVote }) {
                       style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.2)' }}>
                       {article.source}
                     </span>
-                    <span className="text-white/25 text-[10px]">{timeAgo(article.publishedAt)}</span>
+                    <span className="text-[10px]" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.25)' }}>{timeAgo(article.publishedAt)}</span>
                   </div>
                   <VoteButtons section="news" itemId={article.id} votes={votes} onVote={onVote} />
                 </div>
@@ -455,21 +485,22 @@ function NewsCard({ news, widgetSizes, votes, onVote }) {
 // ── AIInsightCard ──────────────────────────────────────────────────────────
 
 function AIInsightCard({ insight, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   const isOpenRouter = insight.source === 'openrouter';
   return (
     <GlassCard type="AI Insights" colSpan={getColSpan('AI Insights', widgetSizes)}>
       <div className="rounded-xl p-3 relative overflow-hidden h-full flex flex-col justify-between"
-        style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.12)' }}>
+        style={{ background: isLight ? 'rgba(167,139,250,0.07)' : 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.15)' }}>
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/8 via-purple-500/4 to-transparent pointer-events-none rounded-xl" />
         <div className="relative">
           <span className="text-violet-400/40 text-4xl font-serif leading-none select-none">"</span>
-          <p className="text-white/75 text-sm leading-relaxed -mt-2">{insight.text}</p>
+          <p className="text-sm leading-relaxed -mt-2" style={{ color: isLight ? '#475569' : 'rgba(255,255,255,0.75)' }}>{insight.text}</p>
         </div>
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
             isOpenRouter
-              ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-              : 'bg-white/5 text-white/30 border border-white/10'
+              ? 'bg-violet-500/15 text-violet-600 border border-violet-500/25'
+              : isLight ? 'bg-black/5 text-slate-400 border border-black/10' : 'bg-white/5 text-white/30 border border-white/10'
           }`}>
             {isOpenRouter ? '⚡ OpenRouter AI' : '📋 Curated tip'}
           </span>
@@ -483,10 +514,11 @@ function AIInsightCard({ insight, widgetSizes, votes, onVote }) {
 // ── MemeCard ───────────────────────────────────────────────────────────────
 
 function MemeCard({ meme, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   return (
     <GlassCard type="Memes" colSpan={getColSpan('Memes', widgetSizes)}>
       <div className="flex flex-col gap-3 h-full">
-        <div className="flex-1 rounded-xl overflow-hidden min-h-0" style={{ background: 'rgba(255,255,255,0.03)' }}>
+        <div className="flex-1 rounded-xl overflow-hidden min-h-0" style={{ background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.03)' }}>
           <img
             src={meme.url}
             alt={meme.caption}
@@ -495,7 +527,7 @@ function MemeCard({ meme, widgetSizes, votes, onVote }) {
           />
         </div>
         <div className="flex items-end justify-between gap-3">
-          <p className="text-white/60 text-xs leading-relaxed italic flex-1">"{meme.caption}"</p>
+          <p className="text-xs leading-relaxed italic flex-1" style={{ color: isLight ? '#64748b' : 'rgba(255,255,255,0.6)' }}>"{meme.caption}"</p>
           <div className="flex-shrink-0">
             <VoteButtons section="meme" itemId={meme.id} votes={votes} onVote={onVote} />
           </div>
@@ -519,6 +551,7 @@ function fearGreedColors(v) {
 }
 
 function FearGreedCard({ fearGreed, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   const { value, classification } = fearGreed;
   const { text, arc } = fearGreedColors(value);
   const dashOffset = ARC_LEN * (1 - value / 100);
@@ -531,7 +564,7 @@ function FearGreedCard({ fearGreed, widgetSizes, votes, onVote }) {
       <div className="flex flex-col items-center gap-1 h-full justify-between py-1">
         <svg viewBox="0 0 180 88" className="w-full max-w-[200px] mx-auto">
           <path d="M 20 82 A 70 70 0 0 1 160 82"
-            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
+            fill="none" stroke={isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)'} strokeWidth="10" strokeLinecap="round" />
           <path d="M 20 82 A 70 70 0 0 1 160 82"
             fill="none" stroke={arc} strokeWidth="10" strokeLinecap="round"
             strokeDasharray={ARC_LEN} strokeDashoffset={dashOffset} />
@@ -540,11 +573,11 @@ function FearGreedCard({ fearGreed, widgetSizes, votes, onVote }) {
         </svg>
         <div className="text-4xl font-black -mt-1" style={{ color: text }}>{value}</div>
         <div className="text-sm font-bold" style={{ color: text }}>{classification}</div>
-        <div className="flex justify-between w-full text-[10px] text-white/20 px-2 mt-1">
+        <div className="flex justify-between w-full text-[10px] px-2 mt-1" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.2)' }}>
           <span>Fear</span><span>Neutral</span><span>Greed</span>
         </div>
-        <p className="text-white/20 text-[10px]">Alternative.me · updated daily</p>
-        <div className="w-full pt-2 border-t border-white/[0.05]">
+        <p className="text-[10px]" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.2)' }}>Alternative.me · updated daily</p>
+        <div className={`w-full pt-2 border-t ${isLight ? 'border-black/[0.06]' : 'border-white/[0.05]'}`}>
           <VoteButtons section="feargreed" itemId="feargreed-today" votes={votes} onVote={onVote} />
         </div>
       </div>
@@ -578,14 +611,18 @@ function ROICard({ roi, prices, widgetSizes, votes, onVote }) {
 
   const accent = '#34D399';
 
+  const isLight = useTheme();
+
   const coinSelect = (
     <div className="relative flex items-center">
-      <ChevronsUpDown size={10} className="absolute left-2 text-white/30 pointer-events-none" />
+      <ChevronsUpDown size={10} className="absolute left-2 pointer-events-none" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }} />
       <select
         value={selectedSymbol}
         onChange={(e) => setSelectedSymbol(e.target.value)}
-        className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none text-white/60"
-        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+        className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none"
+        style={isLight
+          ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', color: '#64748b' }
+          : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
       >
         {safeRoi.map(item => (
           <option key={item.symbol} value={item.symbol}>{item.symbol}</option>
@@ -598,21 +635,21 @@ function ROICard({ roi, prices, widgetSizes, votes, onVote }) {
     <GlassCard type="ROI Calculator" colSpan={getColSpan('ROI Calculator', widgetSizes)} action={coinSelect}>
       <div className="flex flex-col justify-between h-full gap-3">
         <div className="text-center py-2">
-          <p className="text-white/40 text-xs mb-3">
-            $1,000 in <span className="text-white/70 font-semibold">{name}</span> 1 year ago:
+          <p className="text-xs mb-3" style={{ color: isLight ? '#64748b' : 'rgba(255,255,255,0.4)' }}>
+            $1,000 in <span className="font-semibold" style={{ color: isLight ? '#334155' : 'rgba(255,255,255,0.7)' }}>{name}</span> 1 year ago:
           </p>
-          <div className="text-3xl font-black text-white tracking-tight mb-2">
+          <div className="text-3xl font-black tracking-tight mb-2" style={{ color: isLight ? '#1e293b' : '#fff' }}>
             ${currentVal.toLocaleString('en-US', { maximumFractionDigits: 2 })}
           </div>
           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
-            profit >= 0 ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+            profit >= 0 ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-500'
           }`}>
             {profit >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
             {changePct.toFixed(2)}%
           </span>
         </div>
-        <div className="pt-2 border-t border-white/[0.05] flex items-center justify-between">
-          <span className="text-[9px] text-white/25 uppercase tracking-widest font-semibold">Helpful?</span>
+        <div className={`pt-2 border-t flex items-center justify-between ${isLight ? 'border-black/[0.06]' : 'border-white/[0.05]'}`}>
+          <span className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.25)' }}>Helpful?</span>
           <div className="flex gap-1.5">
             <VoteButtons section="ROI Calculator" itemId={activeData.symbol} votes={votes} onVote={onVote} />
           </div>
@@ -625,12 +662,13 @@ function ROICard({ roi, prices, widgetSizes, votes, onVote }) {
 // ── NFTCard ────────────────────────────────────────────────────────────────
 
 function NFTCard({ nfts, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   return (
     <GlassCard type="NFT Showcase" colSpan={getColSpan('NFT Showcase', widgetSizes)}>
-      <div className="flex flex-col divide-y divide-white/[0.04]">
+      <div className={`flex flex-col divide-y ${isLight ? 'divide-black/[0.06]' : 'divide-white/[0.04]'}`}>
         {nfts.slice(0, 6).map((nft, i) => (
           <div key={nft.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-            <span className="text-white/20 font-bold text-xs w-4 flex-shrink-0 tabular-nums">{i + 1}</span>
+            <span className="font-bold text-xs w-4 flex-shrink-0 tabular-nums" style={{ color: isLight ? '#cbd5e1' : 'rgba(255,255,255,0.2)' }}>{i + 1}</span>
             {nft.thumb
               ? <img src={nft.thumb} alt={nft.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
               : <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
@@ -639,12 +677,12 @@ function NFTCard({ nfts, widgetSizes, votes, onVote }) {
                 </div>
             }
             <div className="flex-1 min-w-0">
-              <p className="text-white/85 text-sm font-semibold truncate">{nft.name}</p>
-              <p className="text-white/35 text-[11px]">{nft.floor_price}</p>
+              <p className="text-sm font-semibold truncate" style={{ color: isLight ? '#1e293b' : 'rgba(255,255,255,0.85)' }}>{nft.name}</p>
+              <p className="text-[11px]" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.35)' }}>{nft.floor_price}</p>
             </div>
             {nft.change24h != null && (
               <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                nft.change24h >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                nft.change24h >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'
               }`}>
                 {nft.change24h >= 0 ? '+' : ''}{nft.change24h.toFixed(1)}%
               </span>
@@ -652,7 +690,7 @@ function NFTCard({ nfts, widgetSizes, votes, onVote }) {
           </div>
         ))}
       </div>
-      <div className="pt-2 mt-2 border-t border-white/[0.05]">
+      <div className={`pt-2 mt-2 border-t ${isLight ? 'border-black/[0.06]' : 'border-white/[0.05]'}`}>
         <VoteButtons section="nft" itemId="nft-trending" votes={votes} onVote={onVote} />
       </div>
     </GlassCard>
@@ -662,6 +700,7 @@ function NFTCard({ nfts, widgetSizes, votes, onVote }) {
 // ── WhaleAlertCard ─────────────────────────────────────────────────────────
 
 function WhaleAlertCard({ whales, widgetSizes, votes, onVote }) {
+  const isLight = useTheme();
   function fmtUsd(v) {
     if (v == null) return null;
     return v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : `$${(v / 1e6).toFixed(1)}M`;
@@ -669,29 +708,29 @@ function WhaleAlertCard({ whales, widgetSizes, votes, onVote }) {
 
   return (
     <GlassCard type="Whale Alerts" colSpan={getColSpan('Whale Alerts', widgetSizes)}>
-      <div className="flex flex-col divide-y divide-white/[0.04]">
+      <div className={`flex flex-col divide-y ${isLight ? 'divide-black/[0.06]' : 'divide-white/[0.04]'}`}>
         {whales.map((alert) => (
           <div key={alert.id} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
             <span className="text-sm flex-shrink-0 mt-0.5">🚨</span>
             <div className="flex-1 min-w-0">
-              <p className="text-white/75 text-xs leading-snug">
-                <span className="text-white font-bold">{alert.amount} {alert.coin}</span>
+              <p className="text-xs leading-snug" style={{ color: isLight ? '#475569' : 'rgba(255,255,255,0.75)' }}>
+                <span className="font-bold" style={{ color: isLight ? '#1e293b' : '#fff' }}>{alert.amount} {alert.coin}</span>
                 {' '}moved from{' '}
-                <span className="text-amber-400/80">{alert.from}</span>
+                <span className="text-amber-500">{alert.from}</span>
                 {' '}→{' '}
-                <span className="text-amber-400/80">{alert.to}</span>
+                <span className="text-amber-500">{alert.to}</span>
               </p>
               <div className="flex items-center gap-2 mt-1">
                 {fmtUsd(alert.usdValue) && (
-                  <span className="text-green-400/80 text-[10px] font-semibold">{fmtUsd(alert.usdValue)}</span>
+                  <span className="text-green-600 text-[10px] font-semibold">{fmtUsd(alert.usdValue)}</span>
                 )}
-                <span className="text-white/25 text-[10px]">{timeAgo(alert.timestamp)}</span>
+                <span className="text-[10px]" style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.25)' }}>{timeAgo(alert.timestamp)}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="pt-2 mt-2 border-t border-white/[0.05]">
+      <div className={`pt-2 mt-2 border-t ${isLight ? 'border-black/[0.06]' : 'border-white/[0.05]'}`}>
         <VoteButtons section="whale" itemId="whale-alerts" votes={votes} onVote={onVote} />
       </div>
     </GlassCard>
@@ -780,8 +819,15 @@ export default function Dashboard() {
     }
   };
 
+  const toggleTheme = () => {
+    const next = isLight ? 'dark' : 'light';
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(next);
+    localStorage.setItem('theme', next);
+  };
+
   return (
-    <>
+    <ThemeCtx.Provider value={isLight}>
       {isLight ? <MeshBackground light /> : <MeshBackground />}
 
       <div className="h-dvh overflow-hidden flex flex-col">
@@ -818,6 +864,12 @@ export default function Dashboard() {
                 title="Refresh"
               >
                 <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+              </button>
+
+              <button onClick={toggleTheme} title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
+                className="p-2 rounded-lg hover:text-amber-500 transition-colors"
+                style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }}>
+                {isLight ? <Moon size={15} /> : <Sun size={15} />}
               </button>
 
               <div className="h-5 w-px" style={{ background: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)' }} />
@@ -884,6 +936,6 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-    </>
+    </ThemeCtx.Provider>
   );
 }

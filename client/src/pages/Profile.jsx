@@ -40,24 +40,29 @@ const AVATARS = [
   { emoji: '👽', label: 'From the future' },
 ];
 
-function Chip({ label, selected, onClick }) {
+function Chip({ label, selected, onClick, isLight }) {
   return (
     <button type="button" onClick={onClick}
       className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all ${
         selected
           ? 'bg-amber-400 border-amber-400 text-gray-950'
-          : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-amber-400/60 hover:text-white'
+          : isLight
+            ? 'bg-slate-100 border-slate-200 text-slate-500 hover:border-amber-400/60 hover:text-slate-800'
+            : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-amber-400/60 hover:text-white'
       }`}>
       {label}
     </button>
   );
 }
 
-function Section({ title, children, action }) {
+function Section({ title, children, action, isLight }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
+    <div className="rounded-2xl p-6 flex flex-col gap-4"
+      style={isLight
+        ? { background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }
+        : { background: '#111827', border: '1px solid #1f2937' }}>
       <div className="flex items-center justify-between">
-        <h2 className="text-white font-semibold text-sm">{title}</h2>
+        <h2 className="font-semibold text-sm" style={{ color: isLight ? '#1e293b' : '#fff' }}>{title}</h2>
         {action}
       </div>
       {children}
@@ -69,6 +74,15 @@ export default function Profile() {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const isLight = !isDark;
+
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    obs.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   const toggleTheme = () => {
     const next = isDark ? 'light' : 'dark';
@@ -175,30 +189,40 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: isLight ? '#f1f5f9' : '#030712' }}>
         <Loader2 className="text-amber-400 animate-spin" size={28} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <header className="border-b border-gray-800/60 bg-gray-900/60 backdrop-blur-sm sticky top-0 z-10">
+    <div className="min-h-screen" style={{ background: isLight ? '#f1f5f9' : '#030712' }}>
+      <header className="sticky top-0 z-10 backdrop-blur-sm"
+        style={isLight
+          ? { background: 'rgba(255,255,255,0.88)', borderBottom: '1px solid rgba(0,0,0,0.08)' }
+          : { background: 'rgba(9,9,21,0.85)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="w-full max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/dashboard')} className="text-gray-500 hover:text-white transition-colors">
+            <button onClick={() => navigate('/dashboard')}
+              className="transition-colors"
+              style={{ color: isLight ? '#94a3b8' : '#6b7280' }}
+              onMouseEnter={e => e.currentTarget.style.color = isLight ? '#0f172a' : '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = isLight ? '#94a3b8' : '#6b7280'}>
               <ArrowLeft size={18} />
             </button>
             <div className="flex items-center gap-2">
               <div className="bg-amber-400 rounded-lg p-1.5">
                 <TrendingUp size={16} className="text-gray-950" />
               </div>
-              <span className="text-white font-bold tracking-tight">Edit Profile</span>
+              <span className="font-bold tracking-tight" style={{ color: isLight ? '#1e293b' : '#fff' }}>Edit Profile</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggleTheme} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-all text-gray-400 hover:text-amber-400 hover:border-amber-400/40 bg-gray-800 border-gray-700">
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-all hover:text-amber-500 hover:border-amber-400/40"
+              style={isLight
+                ? { color: '#64748b', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)' }
+                : { color: '#9ca3af', background: '#1f2937', border: '1px solid #374151' }}>
               {isDark ? <Sun size={14} /> : <Moon size={14} />}
               <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
             </button>
@@ -214,7 +238,12 @@ export default function Profile() {
 
       <main className="w-full max-w-[1600px] mx-auto px-6 py-8">
         {error && (
-          <div className="mb-5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>
+          <div className="mb-5 rounded-xl px-4 py-3 text-sm"
+            style={isLight
+              ? { background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }
+              : { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+            {error}
+          </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -222,22 +251,25 @@ export default function Profile() {
           {/* ── Left col ── */}
           <div className="flex flex-col gap-5">
 
-            <Section title="Profile Picture">
+            <Section title="Profile Picture" isLight={isLight}>
               <div className="flex flex-col items-center gap-5">
                 <div className="w-24 h-24 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center text-5xl shadow-lg">
                   {avatarEmoji}
                 </div>
-                <p className="text-gray-400 text-xs -mt-2">{activeAvatar.label}</p>
+                <p className="text-xs -mt-2" style={{ color: isLight ? '#94a3b8' : '#9ca3af' }}>{activeAvatar.label}</p>
                 <div>
-                  <p className="text-gray-500 text-xs text-center mb-3">Choose your avatar</p>
+                  <p className="text-xs text-center mb-3" style={{ color: isLight ? '#94a3b8' : '#6b7280' }}>Choose your avatar</p>
                   <div className="grid grid-cols-4 gap-2">
                     {AVATARS.map(a => (
                       <button key={a.emoji} onClick={() => setAvatarEmoji(a.emoji)} title={a.label}
                         className={`w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-110 ${
-                          avatarEmoji === a.emoji
-                            ? 'bg-amber-400/20 ring-2 ring-amber-400 scale-110'
-                            : 'bg-gray-800 hover:bg-gray-700'
-                        }`}>
+                          avatarEmoji === a.emoji ? 'ring-2 ring-amber-400 scale-110' : ''
+                        }`}
+                        style={{
+                          background: avatarEmoji === a.emoji
+                            ? 'rgba(245,158,11,0.15)'
+                            : isLight ? 'rgba(0,0,0,0.06)' : '#1f2937',
+                        }}>
                         {a.emoji}
                       </button>
                     ))}
@@ -246,39 +278,62 @@ export default function Profile() {
               </div>
             </Section>
 
-            <Section title="Account">
+            <Section title="Account" isLight={isLight}>
               <div>
-                <label className="block text-gray-400 text-xs mb-1.5">Display name</label>
+                <label className="block text-xs mb-1.5" style={{ color: isLight ? '#64748b' : '#9ca3af' }}>Display name</label>
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
+                  style={isLight
+                    ? { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#1e293b' }
+                    : { background: '#1f2937', border: '1px solid #374151', color: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#F59E0B'}
+                  onBlur={e => e.target.style.borderColor = isLight ? '#e2e8f0' : '#374151'} />
               </div>
               <div>
-                <label className="block text-gray-400 text-xs mb-1.5">Email</label>
+                <label className="block text-xs mb-1.5" style={{ color: isLight ? '#64748b' : '#9ca3af' }}>Email</label>
                 <input value={storedUser.email || ''} disabled
-                  className="w-full bg-gray-800/50 border border-gray-700/50 text-gray-500 rounded-lg px-3 py-2 text-sm cursor-not-allowed" />
-                <p className="text-gray-600 text-xs mt-1">Email cannot be changed</p>
+                  className="w-full rounded-lg px-3 py-2 text-sm cursor-not-allowed"
+                  style={isLight
+                    ? { background: '#f1f5f9', border: '1.5px solid #e2e8f0', color: '#94a3b8' }
+                    : { background: 'rgba(31,41,55,0.5)', border: '1px solid rgba(55,65,81,0.5)', color: '#6b7280' }} />
+                <p className="text-xs mt-1" style={{ color: isLight ? '#cbd5e1' : '#4b5563' }}>Email cannot be changed</p>
               </div>
             </Section>
 
-            <Section title="Change Password">
+            <Section title="Change Password" isLight={isLight}>
               <div>
-                <label className="block text-gray-400 text-xs mb-1.5">Current password</label>
+                <label className="block text-xs mb-1.5" style={{ color: isLight ? '#64748b' : '#9ca3af' }}>Current password</label>
                 <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
+                  style={isLight
+                    ? { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#1e293b' }
+                    : { background: '#1f2937', border: '1px solid #374151', color: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#F59E0B'}
+                  onBlur={e => e.target.style.borderColor = isLight ? '#e2e8f0' : '#374151'} />
               </div>
               <div>
-                <label className="block text-gray-400 text-xs mb-1.5">New password</label>
+                <label className="block text-xs mb-1.5" style={{ color: isLight ? '#64748b' : '#9ca3af' }}>New password</label>
                 <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
                   placeholder="Min. 6 characters"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
+                  style={isLight
+                    ? { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#1e293b' }
+                    : { background: '#1f2937', border: '1px solid #374151', color: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#F59E0B'}
+                  onBlur={e => e.target.style.borderColor = isLight ? '#e2e8f0' : '#374151'} />
               </div>
-              {pwError && <p className="text-red-400 text-xs">{pwError}</p>}
+              {pwError && <p className="text-xs" style={{ color: isLight ? '#dc2626' : '#f87171' }}>{pwError}</p>}
               <button onClick={handlePasswordChange} disabled={pwSaving}
-                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-400/50 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-60">
+                className="flex items-center gap-2 font-medium text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-60"
+                style={isLight
+                  ? { background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569' }
+                  : { background: '#1f2937', border: '1px solid #374151', color: '#fff' }}
+                onMouseEnter={e => !e.currentTarget.disabled && (e.currentTarget.style.borderColor = 'rgba(245,158,11,0.5)')}
+                onMouseLeave={e => e.currentTarget.style.borderColor = isLight ? '#e2e8f0' : '#374151'}>
                 {pwSaving ? <><Loader2 size={14} className="animate-spin" /> Updating…</>
-                 : pwSaved ? <><CheckCircle size={14} className="text-green-400" /> Password updated!</>
-                 :           <><Lock size={14} className="text-amber-400" /> Update password</>}
+                 : pwSaved ? <><CheckCircle size={14} className="text-green-500" /> Password updated!</>
+                 :           <><Lock size={14} className="text-amber-500" /> Update password</>}
               </button>
             </Section>
           </div>
@@ -286,22 +341,22 @@ export default function Profile() {
           {/* ── Right col ── */}
           <div className="lg:col-span-2 flex flex-col gap-5">
 
-            <Section title="Crypto Assets">
-              <p className="text-gray-500 text-xs -mt-2">Select all that interest you</p>
+            <Section title="Crypto Assets" isLight={isLight}>
+              <p className="text-xs -mt-2" style={{ color: isLight ? '#94a3b8' : '#6b7280' }}>Select all that interest you</p>
               <div className="flex flex-wrap gap-2">
                 {CRYPTO_OPTIONS.map(coin => (
-                  <Chip key={coin} label={coin}
+                  <Chip key={coin} label={coin} isLight={isLight}
                     selected={cryptoAssets.includes(coin)}
                     onClick={() => toggle(setCryptoAssets, cryptoAssets, coin)} />
                 ))}
               </div>
             </Section>
 
-            <Section title="Investor Type">
-              <p className="text-gray-500 text-xs -mt-2">Pick one</p>
+            <Section title="Investor Type" isLight={isLight}>
+              <p className="text-xs -mt-2" style={{ color: isLight ? '#94a3b8' : '#6b7280' }}>Pick one</p>
               <div className="flex flex-wrap gap-2">
                 {INVESTOR_TYPES.map(type => (
-                  <Chip key={type} label={type}
+                  <Chip key={type} label={type} isLight={isLight}
                     selected={investorType === type}
                     onClick={() => setInvestorType(type)} />
                 ))}
@@ -311,24 +366,26 @@ export default function Profile() {
             {/* ── Content & Layout ── */}
             <Section
               title="Dashboard Layout"
+              isLight={isLight}
               action={
                 <button
                   onClick={() => setEditLayout(v => !v)}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
-                    editLayout
-                      ? 'bg-amber-400/15 border-amber-400/40 text-amber-400'
-                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-amber-400/40 hover:text-amber-400'
-                  }`}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all"
+                  style={editLayout
+                    ? { background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', color: '#d97706' }
+                    : isLight
+                      ? { background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', color: '#64748b' }
+                      : { background: '#1f2937', border: '1px solid #374151', color: '#9ca3af' }}
                 >
                   <LayoutGrid size={12} />
                   {editLayout ? 'Done sizing' : 'Edit sizes'}
                 </button>
               }
             >
-              <p className="text-gray-500 text-xs -mt-2">
+              <p className="text-xs -mt-2" style={{ color: isLight ? '#94a3b8' : '#6b7280' }}>
                 Drag to reorder.{' '}
                 {editLayout
-                  ? <span className="text-amber-400/80">Choose S (¼), M (½), or L (full row) for each widget.</span>
+                  ? <span className="text-amber-500">Choose S (¼), M (½), or L (full row) for each widget.</span>
                   : 'Toggle "Edit sizes" to control widget width.'}
               </p>
 
@@ -383,7 +440,7 @@ export default function Profile() {
                                               ? 'text-gray-950'
                                               : 'opacity-30 hover:opacity-60'
                                           }`}
-                                          style={currentSize === key ? { background: accent } : { background: 'rgba(255,255,255,0.06)' }}
+                                          style={currentSize === key ? { background: accent } : { background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)' }}
                                         >
                                           {label}
                                         </button>
@@ -409,25 +466,25 @@ export default function Profile() {
               )}
 
               {contentTypes.length === 0 && (
-                <p className="text-gray-600 text-xs italic">
+                <p className="text-xs italic" style={{ color: isLight ? '#94a3b8' : '#4b5563' }}>
                   No widgets selected — all will show in default order and size.
                 </p>
               )}
 
               {/* Available to add */}
               {CONTENT_TYPES.filter(t => !contentTypes.includes(t)).length > 0 && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-gray-800">
-                  <p className="text-gray-600 text-xs">Click to add:</p>
+                <div className="flex flex-col gap-2 pt-2" style={{ borderTop: isLight ? '1px solid rgba(0,0,0,0.07)' : '1px solid #1f2937' }}>
+                  <p className="text-xs" style={{ color: isLight ? '#94a3b8' : '#4b5563' }}>Click to add:</p>
                   <div className="flex flex-wrap gap-2">
                     {CONTENT_TYPES.filter(t => !contentTypes.includes(t)).map(type => (
-                      <Chip key={type} label={type} selected={false} onClick={() => addContentType(type)} />
+                      <Chip key={type} label={type} isLight={isLight} selected={false} onClick={() => addContentType(type)} />
                     ))}
                   </div>
                 </div>
               )}
 
               {editLayout && (
-                <p className="text-gray-700 text-[10px] italic border-t border-gray-800 pt-2">
+                <p className="text-[10px] italic pt-2" style={{ color: isLight ? '#94a3b8' : '#374151', borderTop: isLight ? '1px solid rgba(0,0,0,0.07)' : '1px solid #1f2937' }}>
                   Note: oversized widgets may push others off-screen. Default layout fits all 8 widgets in 3 rows.
                 </p>
               )}
