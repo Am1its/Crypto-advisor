@@ -248,7 +248,7 @@ function AlertModal({ prices, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden"
+      <div className="w-full max-w-md rounded-2xl overflow-hidden"
         style={{ background: 'rgba(6,6,16,0.97)', border: '1px solid rgba(245,158,11,0.2)', boxShadow: '0 0 60px rgba(245,158,11,0.12), 0 25px 50px rgba(0,0,0,0.5)' }}>
         <div style={{ background: 'linear-gradient(90deg, #F59E0B, #F59E0B55)' }} className="h-[2px]" />
 
@@ -262,27 +262,27 @@ function AlertModal({ prices, onClose }) {
           </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-3">
-          <div className="flex gap-2">
+        <div className="p-5 flex flex-col gap-3.5">
+          <div className="flex gap-2.5">
             <select value={coinSymbol} onChange={e => setCoinSymbol(e.target.value)}
-              className="flex-1 rounded-lg px-3 py-2 text-sm text-white focus:outline-none cursor-pointer"
+              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
               {prices.map(p => <option key={p.symbol} value={p.symbol} style={{ background: '#0a0a14' }}>{p.symbol}</option>)}
             </select>
-            <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
               <button onClick={() => setIsAbove(true)}
-                className="px-3 py-2 text-xs font-semibold transition-all"
+                className="px-3.5 py-2.5 text-sm font-semibold transition-all"
                 style={{ background: isAbove ? 'rgba(34,197,94,0.15)' : 'transparent', color: isAbove ? '#22c55e' : 'rgba(255,255,255,0.35)' }}>
                 ↑ Above
               </button>
               <button onClick={() => setIsAbove(false)}
-                className="px-3 py-2 text-xs font-semibold transition-all"
+                className="px-3.5 py-2.5 text-sm font-semibold transition-all"
                 style={{ background: !isAbove ? 'rgba(239,68,68,0.15)' : 'transparent', color: !isAbove ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>
                 ↓ Below
               </button>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <input
               type="number"
               min="0"
@@ -290,11 +290,11 @@ function AlertModal({ prices, onClose }) {
               onChange={e => setTargetPrice(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               placeholder="Target price (USD)"
-              className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none"
+              className="flex-1 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
             />
             <button onClick={handleSubmit} disabled={submitting || !targetPrice}
-              className="px-4 py-2 rounded-lg text-xs font-bold text-[#030712] disabled:opacity-40 transition-opacity"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#030712] disabled:opacity-40 transition-opacity"
               style={{ background: '#F59E0B' }}>
               {submitting ? '…' : 'Set'}
             </button>
@@ -614,17 +614,7 @@ function ROICard({ roi, prices, widgetSizes, votes, onVote }) {
         <div className="pt-2 border-t border-white/[0.05] flex items-center justify-between">
           <span className="text-[9px] text-white/25 uppercase tracking-widest font-semibold">Helpful?</span>
           <div className="flex gap-1.5">
-            {[['up', ThumbsUp, '✓'], ['down', ThumbsDown, '✗']].map(([v, Icon, _]) => (
-              <button key={v}
-                onClick={() => onVote('ROI Calculator', activeData.symbol, v)}
-                className={`p-1.5 rounded-full transition-all active:scale-90 ${
-                  votes['ROI Calculator']?.[activeData.symbol] === v
-                    ? v === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                    : 'bg-white/5 text-white/30 hover:bg-white/10'
-                }`}>
-                <Icon size={12} />
-              </button>
-            ))}
+            <VoteButtons section="ROI Calculator" itemId={activeData.symbol} votes={votes} onVote={onVote} />
           </div>
         </div>
       </div>

@@ -47,101 +47,127 @@ export default function Signup() {
     }
   };
 
-  const cardBg      = isLight ? 'rgba(255,255,255,0.85)' : 'rgba(6,6,16,0.82)';
-  const cardBorder  = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
-  const textPrimary = isLight ? '#0f172a' : '#fff';
-  const textSecondary = isLight ? '#64748b' : 'rgba(255,255,255,0.45)';
-  const inputBg     = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
-  const inputBorder = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.1)';
-
-  return (
-    <>
-      <MeshBackground light={isLight} />
-
-      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden">
+  if (isLight) {
+    return (
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-10">
+        <MeshBackground light absolute />
         <div className="w-full max-w-md relative z-10">
-
-          {/* Logo */}
           <div className="flex flex-col items-center gap-3 mb-10">
-            <div className="rounded-2xl p-3.5" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 0 30px rgba(245,158,11,0.35)' }}>
-              <TrendingUp size={28} className="text-black" />
+            <div className="rounded-2xl p-3.5 shadow-lg" style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 0 30px rgba(245,158,11,0.4)' }}>
+              <TrendingUp size={28} className="text-white" />
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold tracking-tight" style={{ color: textPrimary }}>CryptoAdvisor</p>
-              <p className="text-sm mt-1" style={{ color: textSecondary }}>Your AI-powered crypto companion</p>
+              <p className="text-3xl font-bold tracking-tight text-slate-900">CryptoAdvisor</p>
+              <p className="text-sm mt-1 text-slate-500">Your AI-powered crypto companion</p>
             </div>
           </div>
-
-          {/* Card */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: cardBg, backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', border: `1px solid ${cardBorder}`, boxShadow: '0 0 60px rgba(245,158,11,0.08), 0 25px 50px rgba(0,0,0,0.25)' }}>
-            <div style={{ background: 'linear-gradient(90deg, #F59E0B, #F59E0B55)' }} className="h-[2px]" />
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)' }}>
+            <div style={{ background: 'linear-gradient(90deg,#F59E0B,#FBBF24)' }} className="h-[3px]" />
             <div className="p-8">
-              <h2 className="text-2xl font-semibold mb-1" style={{ color: textPrimary }}>Create an account</h2>
-              <p className="text-sm mb-7" style={{ color: textSecondary }}>Start your personalised crypto journey</p>
-
+              <h2 className="text-2xl font-bold mb-1 text-slate-900">Create an account</h2>
+              <p className="text-sm mb-7 text-slate-500">Start your personalised crypto journey</p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: textSecondary }}>Full name</label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder="Satoshi Nakamoto"
-                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
-                    style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                  <label className="block text-sm font-medium mb-1.5 text-slate-700">Full name</label>
+                  <input name="name" value={form.name} onChange={handleChange} placeholder="Satoshi Nakamoto"
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-slate-900 placeholder-slate-400"
+                    style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0' }}
                     onFocus={e => e.target.style.borderColor = '#F59E0B'}
-                    onBlur={e => e.target.style.borderColor = inputBorder}
-                  />
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: textSecondary }}>Email</label>
-                  <input
-                    name="email"
-                    type="text"
-                    value={form.email}
-                    onChange={handleChange}
-                    onBlur={handleEmailBlur}
-                    placeholder="you@example.com"
-                    required
-                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
-                    style={{ background: inputBg, border: `1px solid ${emailError ? 'rgba(239,68,68,0.5)' : inputBorder}`, color: textPrimary }}
-                    onFocus={e => e.target.style.borderColor = emailError ? 'rgba(239,68,68,0.5)' : '#F59E0B'}
-                  />
-                  {emailError && <p className="text-red-400 text-xs mt-1">{emailError}</p>}
+                  <label className="block text-sm font-medium mb-1.5 text-slate-700">Email</label>
+                  <input name="email" type="text" value={form.email} onChange={handleChange} onBlur={handleEmailBlur}
+                    placeholder="you@example.com" required
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-slate-900 placeholder-slate-400"
+                    style={{ background: '#f8fafc', border: `1.5px solid ${emailError ? '#f87171' : '#e2e8f0'}` }}
+                    onFocus={e => e.target.style.borderColor = emailError ? '#f87171' : '#F59E0B'} />
+                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm mb-1.5" style={{ color: textSecondary }}>Password</label>
-                  <input
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Min. 6 characters"
-                    required
-                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
-                    style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                  <label className="block text-sm font-medium mb-1.5 text-slate-700">Password</label>
+                  <input name="password" type="password" value={form.password} onChange={handleChange}
+                    placeholder="Min. 6 characters" required
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-slate-900 placeholder-slate-400"
+                    style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0' }}
                     onFocus={e => e.target.style.borderColor = '#F59E0B'}
-                    onBlur={e => e.target.style.borderColor = inputBorder}
-                  />
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
                 </div>
-
-                {error && (
-                  <div className="px-3 py-2.5 rounded-xl text-sm text-red-400" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    {error}
-                  </div>
-                )}
-
+                {error && <div className="px-3 py-2.5 rounded-xl text-sm text-red-600" style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>{error}</div>}
                 <button type="submit" disabled={loading || !!emailError}
-                  className="w-full font-semibold rounded-xl py-3 text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 mt-2"
-                  style={{ background: '#F59E0B', color: '#030712' }}
-                  onMouseEnter={e => !e.currentTarget.disabled && (e.currentTarget.style.background = '#FBBF24')}
-                  onMouseLeave={e => e.currentTarget.style.background = '#F59E0B'}>
+                  className="w-full font-semibold rounded-xl py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-60 transition-opacity mt-2 text-white"
+                  style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }}>
                   {loading && <Loader2 size={16} className="animate-spin" />}
                   {loading ? 'Creating account…' : 'Create account'}
                 </button>
               </form>
+              <p className="text-sm text-center mt-6 text-slate-500">
+                Already have an account?{' '}
+                <Link to="/login" className="text-amber-500 hover:text-amber-600 font-semibold">Sign in</Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-              <p className="text-sm text-center mt-6" style={{ color: textSecondary }}>
+  // Dark mode
+  return (
+    <>
+      <MeshBackground />
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden">
+        <div className="w-full max-w-md relative z-10">
+          <div className="flex flex-col items-center gap-3 mb-10">
+            <div className="rounded-2xl p-3.5" style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 0 30px rgba(245,158,11,0.35)' }}>
+              <TrendingUp size={28} className="text-black" />
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold tracking-tight text-white">CryptoAdvisor</p>
+              <p className="text-sm mt-1 text-white/40">Your AI-powered crypto companion</p>
+            </div>
+          </div>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(6,6,16,0.82)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 0 60px rgba(245,158,11,0.08), 0 25px 50px rgba(0,0,0,0.25)' }}>
+            <div style={{ background: 'linear-gradient(90deg,#F59E0B,#F59E0B55)' }} className="h-[2px]" />
+            <div className="p-8">
+              <h2 className="text-2xl font-semibold mb-1 text-white">Create an account</h2>
+              <p className="text-sm mb-7 text-white/40">Start your personalised crypto journey</p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm mb-1.5 text-white/50">Full name</label>
+                  <input name="name" value={form.name} onChange={handleChange} placeholder="Satoshi Nakamoto"
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-white placeholder-white/20"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    onFocus={e => e.target.style.borderColor = '#F59E0B'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1.5 text-white/50">Email</label>
+                  <input name="email" type="text" value={form.email} onChange={handleChange} onBlur={handleEmailBlur}
+                    placeholder="you@example.com" required
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-white placeholder-white/20"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${emailError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}` }}
+                    onFocus={e => e.target.style.borderColor = emailError ? 'rgba(239,68,68,0.5)' : '#F59E0B'} />
+                  {emailError && <p className="text-red-400 text-xs mt-1">{emailError}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm mb-1.5 text-white/50">Password</label>
+                  <input name="password" type="password" value={form.password} onChange={handleChange}
+                    placeholder="Min. 6 characters" required
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all text-white placeholder-white/20"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    onFocus={e => e.target.style.borderColor = '#F59E0B'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                </div>
+                {error && <div className="px-3 py-2.5 rounded-xl text-sm text-red-400" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>{error}</div>}
+                <button type="submit" disabled={loading || !!emailError}
+                  className="w-full font-semibold rounded-xl py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-60 mt-2 text-[#030712]"
+                  style={{ background: '#F59E0B' }}>
+                  {loading && <Loader2 size={16} className="animate-spin" />}
+                  {loading ? 'Creating account…' : 'Create account'}
+                </button>
+              </form>
+              <p className="text-sm text-center mt-6 text-white/40">
                 Already have an account?{' '}
                 <Link to="/login" className="text-amber-400 hover:underline font-medium">Sign in</Link>
               </p>
