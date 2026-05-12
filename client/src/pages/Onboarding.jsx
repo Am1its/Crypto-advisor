@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Loader2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { TrendingUp, Loader2, ChevronRight, ChevronLeft, Check, Sun, Moon } from 'lucide-react';
 import client from '../api/client';
 import MeshBackground from '../components/MeshBackground';
 
@@ -66,7 +66,20 @@ export default function Onboarding() {
   const [avatarEmoji, setAvatarEmoji]   = useState('🚀');
   const [error, setError]    = useState('');
   const [loading, setLoading] = useState(false);
-  const isLight = document.documentElement.classList.contains('light');
+  const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains('light'));
+
+  useEffect(() => {
+    const obs = new MutationObserver(() => setIsLight(document.documentElement.classList.contains('light')));
+    obs.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
+  const toggleTheme = () => {
+    const next = isLight ? 'dark' : 'light';
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(next);
+    localStorage.setItem('theme', next);
+  };
 
   const light = {
     root: 'min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-10',
@@ -150,7 +163,15 @@ export default function Onboarding() {
 
   return (
     <div className={t.root}>
-      {isLight ? <MeshBackground light absolute /> : <MeshBackground />}
+      <MeshBackground light={isLight} absolute />
+
+      <button onClick={toggleTheme}
+        className="fixed top-4 right-4 z-50 p-2.5 rounded-xl transition-all"
+        style={isLight
+          ? { background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.1)', color: '#64748b', backdropFilter: 'blur(8px)' }
+          : { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)' }}>
+        {isLight ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
 
       <div className="w-full max-w-lg relative z-10">
 

@@ -828,9 +828,9 @@ export default function Dashboard() {
 
   return (
     <ThemeCtx.Provider value={isLight}>
-      {isLight ? <MeshBackground light /> : <MeshBackground />}
-
-      <div className="h-dvh overflow-hidden flex flex-col">
+      <div className="h-dvh overflow-hidden flex flex-col relative"
+        style={{ background: isLight ? '#f0f4ff' : '#04040a' }}>
+        <MeshBackground light={isLight} absolute />
 
         {/* ── Header ── */}
         <header className="flex-shrink-0"
