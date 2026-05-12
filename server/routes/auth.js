@@ -46,7 +46,11 @@ router.post('/login', async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, name, password, created_at FROM users WHERE email = $1',
+      `SELECT u.id, u.email, u.name, u.password, u.created_at,
+              COALESCE(p.avatar_emoji, '🚀') AS "avatarEmoji"
+       FROM users u
+       LEFT JOIN preferences p ON p.user_id = u.id
+       WHERE u.email = $1`,
       [email]
     );
     const user = rows[0];

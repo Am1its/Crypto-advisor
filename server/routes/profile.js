@@ -11,7 +11,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const [userResult, prefResult] = await Promise.all([
       pool.query('SELECT id, email, name FROM users WHERE id = $1', [userId]),
       pool.query(
-        'SELECT crypto_assets, investor_type, content_types, widget_sizes FROM preferences WHERE user_id = $1',
+        'SELECT crypto_assets, investor_type, content_types, widget_sizes, avatar_emoji FROM preferences WHERE user_id = $1',
         [userId]
       ),
     ]);
@@ -27,26 +27,26 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.put('/', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
-  const { name, crypto_assets, investor_type, content_types, widget_sizes } = req.body;
+  const { name, crypto_assets, investor_type, content_types, widget_sizes, avatar_emoji } = req.body;
   try {
     if (name !== undefined) {
       await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
     }
 
-    if (crypto_assets || investor_type || content_types || widget_sizes !== undefined) {
+    if (crypto_assets || investor_type || content_types || widget_sizes !== undefined || avatar_emoji !== undefined) {
       const existing = await pool.query('SELECT id FROM preferences WHERE user_id = $1', [userId]);
       if (existing.rows.length > 0) {
         await pool.query(
           `UPDATE preferences
-           SET crypto_assets = $1, investor_type = $2, content_types = $3, widget_sizes = $4
-           WHERE user_id = $5`,
-          [crypto_assets, investor_type, content_types, widget_sizes ?? {}, userId]
+           SET crypto_assets = $1, investor_type = $2, content_types = $3, widget_sizes = $4, avatar_emoji = $5
+           WHERE user_id = $6`,
+          [crypto_assets, investor_type, content_types, widget_sizes ?? {}, avatar_emoji ?? '🚀', userId]
         );
       } else {
         await pool.query(
-          `INSERT INTO preferences (user_id, crypto_assets, investor_type, content_types, widget_sizes)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [userId, crypto_assets, investor_type, content_types, widget_sizes ?? {}]
+          `INSERT INTO preferences (user_id, crypto_assets, investor_type, content_types, widget_sizes, avatar_emoji)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [userId, crypto_assets, investor_type, content_types, widget_sizes ?? {}, avatar_emoji ?? '🚀']
         );
       }
     }

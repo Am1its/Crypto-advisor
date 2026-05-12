@@ -136,6 +136,7 @@ export default function Onboarding() {
         crypto_assets: cryptoAssets,
         investor_type: investorType,
         content_types: contentTypes,
+        avatar_emoji: avatarEmoji,
       });
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...storedUser, avatarEmoji }));

@@ -44,6 +44,10 @@ async function runStartupMigrations() {
         created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await pool.query(`
+      ALTER TABLE preferences
+        ADD COLUMN IF NOT EXISTS avatar_emoji TEXT DEFAULT '🚀'
+    `);
     console.log('✓ DB migrations applied');
   } catch (err) {
     console.error('Startup migration warning:', err.message);

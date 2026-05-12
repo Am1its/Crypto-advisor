@@ -34,10 +34,14 @@ const createTables = async () => {
       );
     `);
 
-    // Non-destructive migration: add widget_sizes if it doesn't exist yet
+    // Non-destructive migrations
     await client.query(`
       ALTER TABLE preferences
         ADD COLUMN IF NOT EXISTS widget_sizes JSONB DEFAULT '{}'::jsonb;
+    `);
+    await client.query(`
+      ALTER TABLE preferences
+        ADD COLUMN IF NOT EXISTS avatar_emoji TEXT DEFAULT '🚀';
     `);
 
     await client.query(`

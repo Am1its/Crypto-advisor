@@ -704,6 +704,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains('light'));
   const [data, setData]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
@@ -736,6 +737,14 @@ export default function Dashboard() {
   }, [navigate]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsLight(document.documentElement.classList.contains('light'));
+    });
+    obs.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   const handleVote = async (section, itemId, vote) => {
     const key = `${section}:${itemId}`;
@@ -773,13 +782,17 @@ export default function Dashboard() {
 
   return (
     <>
-      <MeshBackground />
+      {isLight ? <MeshBackground light /> : <MeshBackground />}
 
       <div className="h-dvh overflow-hidden flex flex-col">
 
         {/* ── Header ── */}
-        <header className="flex-shrink-0 border-b border-white/[0.06]"
-          style={{ background: 'rgba(4,4,10,0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
+        <header className="flex-shrink-0"
+          style={{
+            background: isLight ? 'rgba(255,255,255,0.88)' : 'rgba(4,4,10,0.85)',
+            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+            borderBottom: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.06)',
+          }}>
           <div className="max-w-[1920px] mx-auto px-5 h-14 flex items-center justify-between">
 
             <div className="flex items-center gap-3">
@@ -787,9 +800,9 @@ export default function Dashboard() {
                 style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
                 <TrendingUp size={17} className="text-black" />
               </div>
-              <span className="text-white text-base font-bold tracking-tight">CryptoAdvisor</span>
+              <span className="text-base font-bold tracking-tight" style={{ color: isLight ? '#0f172a' : '#fff' }}>CryptoAdvisor</span>
               {loadSlow && (
-                <div className="flex items-center gap-1.5 text-amber-400/70 text-[11px] ml-2">
+                <div className="flex items-center gap-1.5 text-amber-500 text-[11px] ml-2">
                   <RefreshCw size={11} className="animate-spin" />
                   <span>Fetching live data…</span>
                 </div>
@@ -800,16 +813,20 @@ export default function Dashboard() {
               <button
                 onClick={() => loadDashboard(true)}
                 disabled={refreshing}
-                className="text-white/30 hover:text-amber-400 transition-colors disabled:opacity-40 p-2 rounded-lg hover:bg-white/5"
+                className="hover:text-amber-500 transition-colors disabled:opacity-40 p-2 rounded-lg"
+                style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }}
                 title="Refresh"
               >
                 <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
               </button>
 
-              <div className="h-5 w-px bg-white/10" />
+              <div className="h-5 w-px" style={{ background: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)' }} />
 
               <Link to="/profile" title="Edit profile"
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors"
+                style={{ '--hover-bg': isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)' }}
+                onMouseEnter={e => e.currentTarget.style.background = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
                   style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
                   {user.avatarEmoji
@@ -817,12 +834,13 @@ export default function Dashboard() {
                     : <span className="text-amber-400 text-xs font-bold">{initials(user)}</span>
                   }
                 </div>
-                <span className="text-white/60 text-sm hidden sm:block">{user.name || user.email}</span>
+                <span className="text-sm hidden sm:block" style={{ color: isLight ? '#475569' : 'rgba(255,255,255,0.6)' }}>{user.name || user.email}</span>
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 text-white/30 hover:text-red-400 text-sm transition-colors p-2 rounded-lg hover:bg-white/5"
+                className="flex items-center gap-1.5 hover:text-red-400 text-sm transition-colors p-2 rounded-lg"
+                style={{ color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.3)' }}
               >
                 <LogOut size={14} />
                 <span className="hidden sm:block">Logout</span>

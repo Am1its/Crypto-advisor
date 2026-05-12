@@ -103,6 +103,7 @@ export default function Profile() {
       setInvestorType(data.preferences?.investor_type || '');
       setContentTypes(data.preferences?.content_types || []);
       setWidgetSizes(data.preferences?.widget_sizes || {});
+      if (data.preferences?.avatar_emoji) setAvatarEmoji(data.preferences.avatar_emoji);
     }).catch(() => setError('Failed to load profile'))
       .finally(() => setLoading(false));
   }, []);
@@ -135,6 +136,7 @@ export default function Profile() {
         investor_type: investorType,
         content_types: contentTypes,
         widget_sizes: widgetSizes,
+        avatar_emoji: avatarEmoji,
       });
       const updated = { ...storedUser, name, avatarEmoji };
       localStorage.setItem('user', JSON.stringify(updated));
