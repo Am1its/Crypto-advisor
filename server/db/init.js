@@ -40,7 +40,19 @@ const createTables = async () => {
         ADD COLUMN IF NOT EXISTS widget_sizes JSONB DEFAULT '{}'::jsonb;
     `);
 
-    console.log('✓ Tables created (users, preferences, votes)');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS price_alerts (
+        id           SERIAL PRIMARY KEY,
+        user_id      INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        coin_id      TEXT NOT NULL,
+        target_price NUMERIC NOT NULL,
+        is_above     BOOLEAN NOT NULL,
+        is_active    BOOLEAN DEFAULT TRUE,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('✓ Tables created (users, preferences, votes, price_alerts)');
   } finally {
     client.release();
     await pool.end();

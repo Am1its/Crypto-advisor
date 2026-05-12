@@ -371,6 +371,53 @@ This document summarizes how Claude Code and Gemini was used during the developm
 - Kept row span always at 1 (height = 1/3 viewport); users control only column width via S/M/L — avoids complex row-span collision logic
 - Kept `@hello-pangea/dnd` for ordering; size toggles are separate buttons, not draggable resize handles
 
+### Session 7 — Auth/Onboarding Polish, Dark Mode, Email Validation & Price Alerts (2026-05-12)
+
+**What I asked:**
+1. Redesign Login, Signup, and Onboarding pages to match the glassmorphism design system of the dashboard
+2. Extract `MeshBackground` into a reusable component and add light mode support
+3. Add a light/dark theme toggle in Profile (persisted in localStorage, flicker-free)
+4. Add strict email format validation in Signup (frontend + backend)
+5. Implement a full price alerts feature with DB table, REST API, email notification via Resend, and a modal UI in the dashboard
+
+**Claude's contribution:**
+
+**Glassmorphism auth pages:**
+- Extracted `MeshBackground` from `Dashboard.jsx` into `client/src/components/MeshBackground.jsx` with a `light` prop — dark mode uses current violet/amber/sky blobs on `#04040a`, light mode uses pastel variants on `bg-slate-50`
+- Rewrote `Login.jsx`: uses `MeshBackground`, glass card (`rgba(6,6,16,0.82)` + `backdrop-blur(32px)`), amber gradient accent bar, amber focus rings on inputs; all inline-style driven so it adapts to light/dark class
+- Rewrote `Signup.jsx`: same glass system with inline email validation (red border + error text on blur, blocks submit)
+- Rewrote `Onboarding.jsx` as a 4-step flow (Crypto interests → Investor type → Dashboard content → Avatar picker):
+  - Step progress indicator with amber check marks for completed steps
+  - Fade + slide-up transition between steps (CSS opacity/transform via `animating` state flag with 180ms transition)
+  - 16 avatar options in an 8-column grid (added 🐯 🦅 🌙 ⚡ to the original 12)
+  - Navigate forward/back with Continue/Back buttons; final step shows "Go to dashboard →" submit
+
+**Dark/light mode:**
+- Added flicker prevention script to `client/index.html` `<head>` — reads `localStorage.theme` and applies the class before React mounts, preventing flash of wrong theme
+- Added `@variant dark` and `@variant light` to `client/src/index.css` for Tailwind v4 class-based dark mode
+- Profile header: Sun/Moon toggle button; `toggleTheme()` swaps `.dark`/`.light` class on `<html>` and persists to localStorage
+
+**Email validation:**
+- `Signup.jsx`: regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` validated on blur; red inline error message; submit blocked if invalid
+- `server/routes/auth.js` register route: same regex server-side; returns 400 `"Please enter a valid email address"` before DB insert
+
+**Price alerts system:**
+
+*Backend:*
+- `server/db/init.js`: added `CREATE TABLE IF NOT EXISTS price_alerts` (id, user_id FK, coin_id, target_price, is_above, is_active, created_at)
+- `server/routes/alerts.js`: `GET /api/alerts` (list active alerts), `POST /api/alerts` (create), `DELETE /api/alerts/:id` (deactivate); all JWT-authenticated
+- `server/cron/priceAlerts.js`: `node-cron` schedule `*/10 * * * *`; fetches CoinGecko `/simple/price` for all coins in active alerts (grouped by coin to minimize API calls); deactivates triggered alerts via `UPDATE ... WHERE id = ANY($1::int[])`; sends styled HTML email via Resend with current vs target price
+- `server/server.js`: mounts `/api/alerts` router, starts cron after server binds, adds `price_alerts` table to startup migration
+
+*Frontend:*
+- `AlertModal` component in `Dashboard.jsx`: full-screen backdrop overlay; coin dropdown populated from current prices; Above/Below toggle; target price input with Enter-to-submit; shows existing alerts fetched from `GET /api/alerts`; delete button per alert
+- PricesCard header: "🔔 Alert" button alongside the sort dropdown — opens `AlertModal` via `showAlerts` state
+
+**My decisions:**
+- Stored `coin_id` as CoinGecko slug (e.g. `bitcoin`) in the alerts table; client maps symbol → slug via `SYMBOL_TO_CGID`
+- Cron logs alert details to console in demo mode (no `RESEND_API_KEY`) rather than throwing
+- Dark mode does not affect Dashboard (always dark by design as the "Premium OS" aesthetic)
+
 ---
 
 ## Bonus: Feedback Loop & Model Training Suggestion

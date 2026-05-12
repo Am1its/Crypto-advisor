@@ -10,10 +10,15 @@ const SALT_ROUNDS = 10;
 const signToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 router.post('/register', async (req, res) => {
   const { email, name, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
+  }
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address' });
   }
 
   try {

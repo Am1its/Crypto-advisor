@@ -30,7 +30,12 @@ A personalized crypto investor dashboard. Users complete an onboarding quiz, the
 - **Thumbs Up/Down Voting** — optimistic UI updates with DB persistence; per-article for news, per-section for other widgets
 - **JWT Auth** — 7-day tokens, bcrypt password hashing, protected routes
 - **Password Reset** — token-based email flow via Resend API (demo mode shows URL in browser when no key)
-- **Emoji Avatars** — 12 crypto-themed emoji avatars selectable during onboarding and from the profile page
+- **Emoji Avatars** — 16 crypto-themed emoji avatars selectable during onboarding and from the profile page
+- **Multi-step Onboarding** — 4-step flow with progress indicator and CSS fade/slide transitions between steps
+- **Glassmorphism Auth Pages** — Login, Signup, and Onboarding use `MeshBackground` + glass card design matching the dashboard aesthetic
+- **Dark/Light Theme Toggle** — Profile header toggle (Sun/Moon); applies `.dark`/`.light` class to `<html>`; persisted to localStorage; flicker-free via inline `<head>` script
+- **Email Validation** — frontend regex on blur in Signup.jsx; backend regex in auth.js register route; returns 400 with clear error message
+- **Price Alerts** — users set price thresholds per coin; `node-cron` checks every 10 minutes; Resend sends HTML alert email; alerts auto-deactivate after triggering
 
 ---
 
@@ -68,12 +73,14 @@ moveo-crypto-advisor/
 │   ├── index.html                 # Inter font import + global font/scrollbar styles
 │   ├── src/
 │   │   ├── api/client.js          # axios instance, auto-attaches JWT
+│   │   ├── components/
+│   │   │   └── MeshBackground.jsx # Animated blob background; light prop for auth pages
 │   │   └── pages/
-│   │       ├── Login.jsx
-│   │       ├── Signup.jsx
-│   │       ├── Onboarding.jsx
-│   │       ├── Dashboard.jsx      # Premium OS layout, glass cards, 12-col grid
-│   │       ├── Profile.jsx        # Drag order + widget size editor
+│   │       ├── Login.jsx          # Glassmorphism redesign with MeshBackground
+│   │       ├── Signup.jsx         # Glassmorphism + inline email validation
+│   │       ├── Onboarding.jsx     # 4-step flow with progress indicator + fade transitions
+│   │       ├── Dashboard.jsx      # Premium OS layout, glass cards, 12-col grid, alert modal
+│   │       ├── Profile.jsx        # Drag order + widget sizes + dark/light toggle
 │   │       ├── ForgotPassword.jsx
 │   │       └── ResetPassword.jsx
 │   ├── vite.config.js             # Tailwind plugin + /api proxy
@@ -86,14 +93,17 @@ moveo-crypto-advisor/
 │   ├── middleware/
 │   │   └── auth.js                # JWT verification → req.user
 │   ├── routes/
-│   │   ├── auth.js                # register, login, forgot/reset password
+│   │   ├── auth.js                # register (+ email validation), login, forgot/reset password
 │   │   ├── onboarding.js          # save preferences (first login)
 │   │   ├── dashboard.js           # parallel fetch + fetchWithTimeout + fallbacks
 │   │   ├── votes.js               # thumbs up/down
-│   │   └── profile.js             # get/update user + preferences + widget_sizes
+│   │   ├── profile.js             # get/update user + preferences + widget_sizes
+│   │   └── alerts.js              # GET/POST/DELETE price alerts (JWT-protected)
+│   ├── cron/
+│   │   └── priceAlerts.js         # node-cron every 10min; checks alerts; sends Resend email
 │   ├── data/memes.js              # Reddit fetch + static fallback
 │   ├── .env.example
-│   └── server.js
+│   └── server.js                  # mounts alerts router, starts cron, runs startup migrations
 └── docs/
     ├── CLAUDE.md
     └── AI_INTERACTIONS.md
@@ -141,6 +151,17 @@ moveo-crypto-advisor/
 | expires_at | TIMESTAMP | 1 hour from creation     |
 | used       | BOOLEAN   | Default false            |
 | created_at | TIMESTAMP | Default now()            |
+
+### price_alerts
+| Column       | Type      | Notes                                    |
+|--------------|-----------|------------------------------------------|
+| id           | SERIAL    | Primary key                              |
+| user_id      | INT       | FK → users (CASCADE)                     |
+| coin_id      | TEXT      | CoinGecko slug e.g. `bitcoin`            |
+| target_price | NUMERIC   | USD threshold                            |
+| is_above     | BOOLEAN   | TRUE = alert when price ≥ target         |
+| is_active    | BOOLEAN   | FALSE after triggered; Default true      |
+| created_at   | TIMESTAMP | Default now()                            |
 
 ---
 
@@ -260,6 +281,9 @@ When `_stale: true` prices are served, the frontend shows an `APPROX` badge in t
 | GET  | `/api/profile` | Yes | Fetch user + preferences + widget_sizes |
 | PUT  | `/api/profile` | Yes | Update name, preferences, content_types order, widget_sizes |
 | PUT  | `/api/profile/password` | Yes | Change password (bcrypt verify + rehash) |
+| GET  | `/api/alerts` | Yes | List active price alerts for user |
+| POST | `/api/alerts` | Yes | Create a new price alert |
+| DELETE | `/api/alerts/:id` | Yes | Deactivate a price alert |
 | GET  | `/health` | No | Server health check |
 
 ---
@@ -273,7 +297,7 @@ DATABASE_URL=postgresql://...
 JWT_SECRET=your_long_random_secret
 COINGECKO_API_KEY=your_demo_key
 OPENROUTER_API_KEY=your_key
-RESEND_API_KEY=your_key
+RESEND_API_KEY=your_key        # also used for price alert emails
 ```
 
 > Note: Port 5000 is reserved by macOS AirPlay — use 3001 locally.
@@ -318,7 +342,7 @@ Render env vars needed: `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`, `COINGECKO_A
 
 ### High priority
 - [ ] **Portfolio tracker** — user enters coin holdings, dashboard shows total USD value and P&L
-- [ ] **Price alerts** — user sets a threshold; server polls CoinGecko and emails via Resend when crossed
+- [x] **Price alerts** ✅ — `price_alerts` table; `node-cron` polls every 10 min; Resend email on trigger; modal UI in Prices card
 - [ ] **Persistent avatar** — save `avatarEmoji` to the DB (currently only in localStorage; clears on new device/login)
 - [ ] **Email verification on signup** — send a verification link via Resend before allowing login
 - [x] **Change password from profile** ✅
@@ -328,7 +352,7 @@ Render env vars needed: `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`, `COINGECKO_A
 ### Medium priority
 - [ ] **Historical price chart** — click a coin row to expand a 7/30-day chart (CoinGecko `/coins/{id}/market_chart` + Recharts)
 - [ ] **News pagination** — "Load more" button or infinite scroll on the news card
-- [ ] **Dark/light theme toggle** — persist preference in localStorage
+- [x] **Dark/light theme toggle** ✅ — toggle in Profile; `.dark`/`.light` on `<html>`; localStorage; flicker-free script in `<head>`
 - [ ] **Arbitrary widget grid positioning** — drag widgets to specific grid coordinates (requires collision detection)
 
 ### Low priority / polish

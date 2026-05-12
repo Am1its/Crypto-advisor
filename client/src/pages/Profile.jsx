@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp, Lock, GripVertical, X, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, TrendingUp, Lock, GripVertical, X, LayoutGrid, Sun, Moon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import toast from 'react-hot-toast';
 import client from '../api/client';
@@ -68,6 +68,15 @@ function Section({ title, children, action }) {
 export default function Profile() {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  const toggleTheme = () => {
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(next);
+    localStorage.setItem('theme', next);
+    setIsDark(!isDark);
+  };
 
   const [name, setName]               = useState(storedUser.name || '');
   const [avatarEmoji, setAvatarEmoji] = useState(storedUser.avatarEmoji || '🚀');
@@ -185,12 +194,19 @@ export default function Profile() {
               <span className="text-white font-bold tracking-tight">Edit Profile</span>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-all text-gray-400 hover:text-amber-400 hover:border-amber-400/40 bg-gray-800 border-gray-700">
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+            </button>
           <button onClick={handleSave} disabled={saving}
             className="flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-gray-950 font-semibold text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-60">
             {saving  ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
              : saved  ? <><CheckCircle size={14} /> Saved!</>
              :           <><Save size={14} /> Save changes</>}
           </button>
+          </div>
         </div>
       </header>
 

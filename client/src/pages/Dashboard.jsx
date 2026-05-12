@@ -4,9 +4,11 @@ import {
   TrendingUp, TrendingDown, LogOut, RefreshCw,
   ThumbsUp, ThumbsDown, Newspaper, Sparkles, ImageIcon,
   BarChart2, ExternalLink, ChevronsUpDown,
-  Activity, Layers, Zap, DollarSign,
+  Activity, Layers, Zap, DollarSign, Bell, X,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import client from '../api/client';
+import MeshBackground from '../components/MeshBackground';
 
 // ── Widget theming ─────────────────────────────────────────────────────────
 
@@ -52,43 +54,6 @@ function fmt(price) {
 function initials(user) {
   if (user.name) return user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   return user.email?.[0]?.toUpperCase() || '?';
-}
-
-// ── Animated mesh background ───────────────────────────────────────────────
-
-function MeshBackground() {
-  return (
-    <>
-      <style>{`
-        @keyframes meshBlob1 {
-          0%,100% { transform: translate(0%,0%) scale(1); }
-          33%      { transform: translate(12%,22%) scale(1.08); }
-          66%      { transform: translate(-8%,12%) scale(0.94); }
-        }
-        @keyframes meshBlob2 {
-          0%,100% { transform: translate(0%,0%) scale(1); }
-          33%      { transform: translate(-18%,-12%) scale(1.06); }
-          66%      { transform: translate(8%,-22%) scale(1.1); }
-        }
-        @keyframes meshBlob3 {
-          0%,100% { transform: translate(0%,0%) scale(1); }
-          33%      { transform: translate(8%,-8%) scale(0.92); }
-          66%      { transform: translate(-12%,18%) scale(1.04); }
-        }
-        .mesh-b1 { animation: meshBlob1 24s ease-in-out infinite; }
-        .mesh-b2 { animation: meshBlob2 30s ease-in-out infinite; }
-        .mesh-b3 { animation: meshBlob3 20s ease-in-out infinite; }
-      `}</style>
-      <div className="fixed inset-0 -z-10 overflow-hidden bg-[#04040a]">
-        <div className="mesh-b1 absolute -top-40 -left-32 w-[700px] h-[700px] rounded-full bg-violet-600/[0.11] blur-[130px] pointer-events-none" />
-        <div className="mesh-b2 absolute top-10 right-[-15%] w-[550px] h-[550px] rounded-full bg-amber-500/[0.07] blur-[110px] pointer-events-none" />
-        <div className="mesh-b3 absolute bottom-[-15%] left-[25%] w-[650px] h-[650px] rounded-full bg-sky-500/[0.07] blur-[130px] pointer-events-none" />
-        {/* subtle grid overlay */}
-        <div className="absolute inset-0 opacity-[0.018]"
-          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
-      </div>
-    </>
-  );
 }
 
 // ── Sparkline ──────────────────────────────────────────────────────────────
@@ -232,6 +197,138 @@ function GlassSkeleton({ colSpan = 6 }) {
   );
 }
 
+// ── AlertModal ─────────────────────────────────────────────────────────────
+
+const SYMBOL_TO_CGID = {
+  BTC: 'bitcoin', ETH: 'ethereum', SOL: 'solana', BNB: 'binancecoin',
+  XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', AVAX: 'avalanche-2',
+};
+
+function AlertModal({ prices, onClose }) {
+  const [alerts, setAlerts]         = useState([]);
+  const [coinSymbol, setCoinSymbol] = useState(prices[0]?.symbol || '');
+  const [targetPrice, setTargetPrice] = useState('');
+  const [isAbove, setIsAbove]       = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    client.get('/alerts').then(r => setAlerts(r.data)).catch(() => {});
+  }, []);
+
+  const handleSubmit = async () => {
+    const val = parseFloat(targetPrice);
+    if (!targetPrice || isNaN(val) || val <= 0) return;
+    setSubmitting(true);
+    try {
+      const { data } = await client.post('/alerts', {
+        coin_id: SYMBOL_TO_CGID[coinSymbol] || coinSymbol.toLowerCase(),
+        target_price: val,
+        is_above: isAbove,
+      });
+      setAlerts(prev => [data, ...prev]);
+      setTargetPrice('');
+      toast.success('Alert set!');
+    } catch {
+      toast.error('Failed to set alert');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await client.delete(`/alerts/${id}`);
+      setAlerts(prev => prev.filter(a => a.id !== id));
+    } catch {
+      toast.error('Failed to remove alert');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden"
+        style={{ background: 'rgba(6,6,16,0.97)', border: '1px solid rgba(245,158,11,0.2)', boxShadow: '0 0 60px rgba(245,158,11,0.12), 0 25px 50px rgba(0,0,0,0.5)' }}>
+        <div style={{ background: 'linear-gradient(90deg, #F59E0B, #F59E0B55)' }} className="h-[2px]" />
+
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.05]">
+          <div className="flex items-center gap-2">
+            <Bell size={13} style={{ color: '#F59E0B' }} />
+            <span style={{ color: '#F59E0B' }} className="text-[10px] font-bold uppercase tracking-[0.14em]">Price Alerts</span>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-0.5">
+            <X size={15} />
+          </button>
+        </div>
+
+        <div className="p-5 flex flex-col gap-3">
+          <div className="flex gap-2">
+            <select value={coinSymbol} onChange={e => setCoinSymbol(e.target.value)}
+              className="flex-1 rounded-lg px-3 py-2 text-sm text-white focus:outline-none cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {prices.map(p => <option key={p.symbol} value={p.symbol} style={{ background: '#0a0a14' }}>{p.symbol}</option>)}
+            </select>
+            <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button onClick={() => setIsAbove(true)}
+                className="px-3 py-2 text-xs font-semibold transition-all"
+                style={{ background: isAbove ? 'rgba(34,197,94,0.15)' : 'transparent', color: isAbove ? '#22c55e' : 'rgba(255,255,255,0.35)' }}>
+                ↑ Above
+              </button>
+              <button onClick={() => setIsAbove(false)}
+                className="px-3 py-2 text-xs font-semibold transition-all"
+                style={{ background: !isAbove ? 'rgba(239,68,68,0.15)' : 'transparent', color: !isAbove ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>
+                ↓ Below
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min="0"
+              value={targetPrice}
+              onChange={e => setTargetPrice(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              placeholder="Target price (USD)"
+              className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+            />
+            <button onClick={handleSubmit} disabled={submitting || !targetPrice}
+              className="px-4 py-2 rounded-lg text-xs font-bold text-[#030712] disabled:opacity-40 transition-opacity"
+              style={{ background: '#F59E0B' }}>
+              {submitting ? '…' : 'Set'}
+            </button>
+          </div>
+        </div>
+
+        {alerts.length > 0 && (
+          <div className="border-t border-white/[0.05] px-5 pb-4">
+            <p className="text-[10px] uppercase tracking-wider mb-2 pt-3" style={{ color: 'rgba(255,255,255,0.25)' }}>Active alerts</p>
+            <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
+              {alerts.map(a => (
+                <div key={a.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    <span className="font-semibold text-white">{a.coin_id.toUpperCase()}</span>
+                    {' '}{a.is_above ? '↑' : '↓'}{' '}
+                    <span className="text-white">${Number(a.target_price).toLocaleString()}</span>
+                  </span>
+                  <button onClick={() => handleDelete(a.id)}
+                    className="ml-2 transition-colors" style={{ color: 'rgba(255,255,255,0.2)' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}>
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── SORT OPTIONS ───────────────────────────────────────────────────────────
 
 const SORT_OPTIONS = [
@@ -244,7 +341,8 @@ const SORT_OPTIONS = [
 // ── PricesCard ─────────────────────────────────────────────────────────────
 
 function PricesCard({ prices, widgetSizes, votes, onVote }) {
-  const [sortBy, setSortBy] = useState('default');
+  const [sortBy, setSortBy]       = useState('default');
+  const [showAlerts, setShowAlerts] = useState(false);
   const isStale = prices.some((c) => c._stale);
 
   const sorted = [...prices].sort((a, b) => {
@@ -255,20 +353,31 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
   });
 
   const sortAction = (
-    <div className="relative flex items-center">
-      <ChevronsUpDown size={10} className="absolute left-2 text-white/30 pointer-events-none" />
-      <select
-        value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none text-white/60"
-        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-      >
-        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+    <div className="flex items-center gap-1.5">
+      <button onClick={() => setShowAlerts(true)}
+        className="flex items-center gap-1 text-[10px] font-medium rounded-lg px-2 py-1 transition-colors"
+        style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}
+        onMouseEnter={e => { e.currentTarget.style.color = '#F59E0B'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}>
+        <Bell size={9} /> Alert
+      </button>
+      <div className="relative flex items-center">
+        <ChevronsUpDown size={10} className="absolute left-2 text-white/30 pointer-events-none" />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="text-[10px] font-medium rounded-lg pl-5 pr-2 py-1 focus:outline-none cursor-pointer appearance-none text-white/60"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
     </div>
   );
 
   return (
+    <>
+      {showAlerts && <AlertModal prices={prices} onClose={() => setShowAlerts(false)} />}
     <GlassCard type="Charts" colSpan={getColSpan('Charts', widgetSizes)} action={sortAction} isStale={isStale}>
       <div className="flex flex-col divide-y divide-white/[0.04]">
         {sorted.map((coin) => (
@@ -304,6 +413,7 @@ function PricesCard({ prices, widgetSizes, votes, onVote }) {
         <VoteButtons section="prices" itemId="prices-today" votes={votes} onVote={onVote} />
       </div>
     </GlassCard>
+    </>
   );
 }
 
