@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 
+// Stateless Auth: no session stored server-side — each request carries a self-contained signed JWT;
+// the server only needs the secret to verify it, keeping the API horizontally scalable
 export default function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {

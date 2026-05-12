@@ -34,7 +34,8 @@ const createTables = async () => {
       );
     `);
 
-    // Non-destructive migrations
+    // Non-destructive migrations — safe to re-run on every startup
+    // Schema Flexibility: JSONB lets widget_sizes grow (new keys, renamed widgets) without ALTER TABLE
     await client.query(`
       ALTER TABLE preferences
         ADD COLUMN IF NOT EXISTS widget_sizes JSONB DEFAULT '{}'::jsonb;

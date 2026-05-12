@@ -127,6 +127,7 @@ export default function Profile() {
 
   const onContentDragEnd = (result) => {
     if (!result.destination) return;
+    // Immutability: Array.from creates a fresh copy so React detects the reference change and re-renders
     const items = Array.from(contentTypes);
     const [moved] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, moved);

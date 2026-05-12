@@ -19,9 +19,42 @@ A personalized crypto investor dashboard that learns your preferences and serves
   - 🧮 **Interactive ROI Calculator** — Select a coin to dynamically calculate what a $1,000 investment 1 year ago is worth today
   - 🖼️ **Trending NFTs** — Top NFT collections by 24h floor price change
   - 🐳 **Whale Alerts** — Simulated massive on-chain crypto transfers
-- **Premium UI/UX** — Glassmorphism design, skeleton loaders for seamless data fetching, and sleek toast notifications (`react-hot-toast`).
-- **Drag & Drop Customization** — Users can fully reorder their dashboard widgets via a Drag-and-Drop interface (`@hello-pangea/dnd`) in their profile.
+- **Premium UI/UX** — Glassmorphism cards, animated mesh background, skeleton loaders, and `react-hot-toast` notifications.
+- **Dark / Light Mode** — Toggle from any page; preference persisted to `localStorage`; flicker-free via inline `<head>` script.
+- **Price Alerts** — Set per-coin price thresholds; `node-cron` checks every 10 min; Resend sends a styled HTML email when triggered.
+- **Drag & Drop Customization** — Reorder and resize (S/M/L) dashboard widgets in Profile; order and sizes persisted to the DB.
 - **Voting System (RLHF)** — Thumbs up/down on every section. Votes are stored in the DB for future machine learning model improvements.
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Dark Dashboard</b></td>
+    <td align="center"><b>Light Dashboard</b></td>
+  </tr>
+  <tr>
+    <td><img src="client/src/assets/screenshots/dark_dashboard.png" alt="Dark Dashboard" width="100%"/></td>
+    <td><img src="client/src/assets/screenshots/light_dashboard.png" alt="Light Dashboard" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Profile &amp; Widget Layout</b></td>
+    <td align="center"><b>Price Alerts Modal</b></td>
+  </tr>
+  <tr>
+    <td><img src="client/src/assets/screenshots/dark_profile.png" alt="Edit Profile" width="100%"/></td>
+    <td><img src="client/src/assets/screenshots/alert_tab.png" alt="Price Alerts" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Login Page</b></td>
+    <td align="center"><b>Email Alert Notification</b></td>
+  </tr>
+  <tr>
+    <td><img src="client/src/assets/screenshots/dark_login.png" alt="Login" width="100%"/></td>
+    <td><img src="client/src/assets/screenshots/email_coin_alert.png" alt="Email Alert" width="100%"/></td>
+  </tr>
+</table>
 
 ---
 
@@ -95,10 +128,14 @@ RESEND_API_KEY=                        # free at resend.com (optional — shows 
 | POST | `/api/auth/forgot-password` | — | Send password reset email |
 | POST | `/api/auth/reset-password` | — | Reset password via token |
 | POST | `/api/onboarding` | ✓ | Save user preferences |
-| GET  | `/api/dashboard` | ✓ | Fetch all 4 dashboard sections |
+| GET  | `/api/dashboard` | ✓ | Fetch all 8 widgets in parallel |
 | POST | `/api/votes` | ✓ | Submit thumbs up/down |
 | GET  | `/api/profile` | ✓ | Get user + preferences |
-| PUT  | `/api/profile` | ✓ | Update name + preferences |
+| PUT  | `/api/profile` | ✓ | Update name, preferences, widget sizes |
+| PUT  | `/api/profile/password` | ✓ | Change password |
+| GET  | `/api/alerts` | ✓ | List active price alerts |
+| POST | `/api/alerts` | ✓ | Create a price alert |
+| DELETE | `/api/alerts/:id` | ✓ | Deactivate a price alert |
 | GET  | `/health` | — | Server health check |
 
 ---
@@ -112,4 +149,18 @@ RESEND_API_KEY=                        # free at resend.com (optional — shows 
 
 ---
 
-For more details on the architecture and AI interactions, please check the docs/ directory.
+## Bonus: Feedback Loop & Model Training
+
+The thumbs up/down votes (stored per user, per content item) create a naturally labeled dataset for future model improvements:
+
+1. **Feature engineering** — encode `(user_preferences, content_metadata)` as vectors
+2. **Model** — train a ranking model (`P(vote=up | user, content)`) starting with logistic regression, graduating to a neural ranker as data grows
+3. **Re-ranking** — surface content each user is most likely to upvote
+4. **Retraining** — weekly batch job on Render; deploy only if the new model beats baseline on a held-out set
+5. **Cold start** — new users fall back to global popularity until their vote history accumulates
+
+The onboarding quiz provides a strong prior signal before any votes exist — mirroring how Netflix and Spotify bootstrap from explicit preferences before shifting to behavioral signals.
+
+---
+
+For the full interaction log and architecture notes see [`docs/AI_INTERACTIONS.md`](docs/AI_INTERACTIONS.md).

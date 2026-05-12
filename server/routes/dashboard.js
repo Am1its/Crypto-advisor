@@ -26,7 +26,8 @@ const COIN_IMAGES = {
   'avalanche-2':'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
 };
 
-// Wraps fetch with an AbortController timeout so no call ever hangs indefinitely
+// Network Resilience: AbortController caps every external call at 8 s so a stalled CoinGecko/OpenRouter
+// request never blocks the entire dashboard response
 function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -449,6 +450,8 @@ router.get('/', authMiddleware, async (req, res) => {
     // Prices are always fetched first — ROI depends on current price data
     const prices = await fetchPrices(assets);
 
+    // Parallel Fetching + Graceful Degradation: all 7 sources fire concurrently; the null sentinels
+    // returned by unwanted widgets ensure no single failure can reject the entire array
     const [news, insight, meme, fearGreed, roi, nfts, whales] = await Promise.all([
       fetchNews(assets),
       fetchAIInsight(investor_type, assets, process.env.OPENROUTER_API_KEY),

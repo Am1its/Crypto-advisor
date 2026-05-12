@@ -420,6 +420,59 @@ This document summarizes how Claude Code and Gemini was used during the developm
 
 ---
 
+### Session 8 — Full Dark/Light Mode, Avatar Persistence & Final Polish (2026-05-12)
+
+**What I asked:**
+1. Persist `avatarEmoji` to the database so it survives logout
+2. Apply the dark/light theme to every component in Dashboard (cards, titles, buttons, backgrounds)
+3. Ensure theme switching works from every page simultaneously
+4. Widen Login/Signup cards and add a Sun/Moon toggle to all auth and onboarding pages
+5. Fix the dark background bleeding through in Dashboard light mode
+6. Add production-ready code documentation, clean the repo, rewrite the README, and update this interaction log
+
+**Claude's contribution:**
+
+**Avatar persistence (server — 3 files):**
+- `server/server.js`: added startup migration `ALTER TABLE preferences ADD COLUMN IF NOT EXISTS avatar_emoji TEXT DEFAULT '🚀'`
+- `server/routes/onboarding.js`: destructures `avatar_emoji` from body; saves it in both the INSERT and UPDATE paths
+- `server/routes/profile.js`: GET selects `avatar_emoji`; PUT persists it
+- `server/routes/auth.js`: login query LEFT JOINs preferences and returns `COALESCE(p.avatar_emoji,'🚀') AS "avatarEmoji"` in the user object so the dashboard picks it up immediately after login
+
+**Full dark/light mode for Dashboard:**
+- Added `createContext`/`useContext` and `ThemeCtx` module-level context so all card sub-components share `isLight` without prop drilling
+- All 8 widget components (`GlassCard`, `GlassSkeleton`, `VoteButtons`, `AlertModal`, `PricesCard`, `NewsCard`, `AIInsightCard`, `MemeCard`, `FearGreedCard`, `ROICard`, `NFTCard`, `WhaleAlertCard`) call `useTheme()` and switch between dark glass and light white-glass inline styles
+- `GlassCard` switches backgrounds: `rgba(6,6,16,0.76)` (dark) ↔ `rgba(255,255,255,0.88)` (light)
+- Dashboard root container carries explicit `background` color; `<MeshBackground absolute />` is constrained inside it — fixes the browser promotion of `body { background: #04040a }` to the viewport canvas that was bleeding through in light mode
+- Sun/Moon toggle added to the dashboard header
+
+**Auth pages (Login, Signup, Onboarding):**
+- `MutationObserver` on `<html>` classlist drives reactive `isLight` state on every page
+- `ThemeToggle` (fixed top-right `z-50` Sun/Moon button) added to all three pages
+- Both Login and Signup use an `if (isLight) return (...)` dual-render pattern with light-slate and dark-glass styles respectively; cards widened to `max-w-xl`, padding `p-10`
+- Onboarding: MeshBackground switched to `absolute` positioning inside `relative overflow-hidden` root (consistent with Dashboard fix)
+
+**Code documentation (4 files):**
+- `server/routes/dashboard.js`: "Network Resilience" on `fetchWithTimeout`; "Parallel Fetching + Graceful Degradation" on `Promise.all`
+- `server/db/init.js`: "Schema Flexibility" on the JSONB widget_sizes migration
+- `server/middleware/auth.js`: "Stateless Auth" explaining horizontal scalability
+- `client/src/pages/Profile.jsx`: "Immutability" on the DnD `Array.from` pattern
+
+**Repository cleanup:**
+- Removed stale `CRYPTOPANIC_API_KEY` from `.env.example`, added `RESEND_API_KEY`
+- Verified all `console.log` calls are meaningful operational logs (startup, cron trigger count); no debug noise
+- Verified `CREATE TABLE IF NOT EXISTS price_alerts` in `init.js` is idempotent and safe
+
+**README.md:**
+- Added Dark/Light Mode, Price Alerts, and Drag & Drop Sizing to the features list
+- Updated API table to reflect 8 widgets and the full alerts/password/profile endpoints
+- Added "Bonus: Feedback Loop & Model Training" section
+
+**My decisions:**
+- Used React Context (not prop drilling) for `isLight` in Dashboard — all sub-components are defined in the same file, so Context avoids 8 separate prop threads without adding complexity
+- Removed `docs/CLAUDE.md` (detailed architecture reference) now that its key content lives in the README and code comments; this keeps the docs/ directory lean for the submission
+
+---
+
 ## Bonus: Feedback Loop & Model Training Suggestion
 
 ### How Votes Can Power Future Model Improvements
